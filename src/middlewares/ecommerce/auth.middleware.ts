@@ -1,23 +1,30 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express'
 
-import asyncHandler from '~/utils/asyncHandler'
-import ApiError from '~/utils/ApiError'
 import { verifyAccessToken } from '~/utils/token'
 
-export const authenticate: RequestHandler = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const authenticate: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   const headers = req.headers.authorization
-  const accesstoken = headers ? headers.split(' ')[1] : ''
+  const accessToken = headers ? headers.split(' ')[1] : ''
 
-  if (!accesstoken) {
-    throw new ApiError(401, 'Unauthorized - No access token')
+  try {
+    if (!accessToken) {
+      return res.status(401).json({ message: 'Unauthorized! (token not found)' })
+    }
+
+    const decoded = verifyAccessToken(accessToken)
+
+    req.decoded = decoded
+
+    next()
+  } catch (error: any) {
+    if (error.message?.includes('jwt expired')) {
+      return res.status(401).json({
+        message: 'Unauthorized! (token expired)'
+      })
+    }
+
+    return res.status(401).json({
+      message: 'Unauthorized! (token invalid)'
+    })
   }
-
-  const decoded = verifyAccessToken(accesstoken)
-
-  if (!decoded) {
-    throw new ApiError(401, 'Unauthorized - Invalid token')
-  }
-
-  req.userId = decoded.userId
-  next()
-})
+}

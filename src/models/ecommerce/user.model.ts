@@ -8,11 +8,19 @@ interface IUser extends Document {
   email: string
   password?: string
   phoneNumber?: string
-  photoUrl?: string
-  rule: number
-  address?: string
+  photoUrl: string
+  address?: {
+    address: string
+    city: string
+    district: string
+    ward: string
+    cityName: string
+    districtName: string
+    wardName: string
+  }
   isGoogleAccount: boolean
   isActive: boolean
+  isAdmin: boolean
 }
 
 const userSchema = new Schema<IUser>(
@@ -43,12 +51,19 @@ const userSchema = new Schema<IUser>(
       select: false
     },
     phoneNumber: String,
-    photoUrl: String,
-    rule: {
-      type: Number,
-      default: 1
+    photoUrl: {
+      type: String,
+      default: 'https://png.pngtree.com/png-clipart/20210129/ourmid/pngtree-default-male-avatar-png-image_2811083.jpg'
     },
-    address: String,
+    address: {
+      address: String,
+      city: String,
+      district: String,
+      ward: String,
+      cityName: String,
+      districtName: String,
+      wardName: String
+    },
     isGoogleAccount: {
       type: Boolean,
       default: false
@@ -56,6 +71,10 @@ const userSchema = new Schema<IUser>(
     isActive: {
       type: Boolean,
       default: true
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false
     }
   },
   {

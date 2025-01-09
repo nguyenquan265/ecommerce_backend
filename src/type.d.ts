@@ -2,9 +2,9 @@ import express from 'express'
 
 declare module 'express' {
   interface Request {
-    cookies: {
-      refreshToken: string
+    decoded?: {
+      userId: string
+      email: string
     }
-    userId?: string
   }
 }

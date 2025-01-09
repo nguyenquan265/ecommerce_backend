@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { Error as MongoError } from 'mongoose'
-import { TokenExpiredError } from 'jsonwebtoken'
+// import { TokenExpiredError } from 'jsonwebtoken'
 
 import ApiError from '../utils/ApiError'
 
@@ -33,10 +33,10 @@ const errorHandler = (error: unknown, req: Request, res: Response, next: NextFun
     }
   }
 
-  if (error instanceof TokenExpiredError) {
-    errorCode = 401
-    errorMsg = 'Token expired.'
-  }
+  // if (error instanceof TokenExpiredError) {
+  //   errorCode = 410
+  //   errorMsg = 'Unauthorized! (token expired)'
+  // }
 
   if (error) res.status(errorCode).json({ message: errorMsg })
 }

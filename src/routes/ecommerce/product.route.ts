@@ -1,10 +1,13 @@
 import { Router } from 'express'
 
-import { getProducts } from '~/controllers/ecommerce/product.controller'
 import { authenticate } from '~/middlewares/ecommerce/auth.middleware'
 
 const router = Router()
 
-router.get('/', getProducts)
+router.get('/')
+router.post('/')
+router.get('/:productId')
+router.patch('/:productId')
+router.delete('/:productId')
 
 export default router
