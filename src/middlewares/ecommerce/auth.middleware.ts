@@ -11,7 +11,7 @@ export const authenticate: RequestHandler = async (req: Request, res: Response, 
       return res.status(401).json({ message: 'Unauthorized! (token not found)' })
     }
 
-    const decoded = verifyAccessToken(accessToken)
+    const decoded = await verifyAccessToken(accessToken)
 
     req.decoded = decoded
 

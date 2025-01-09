@@ -31,8 +31,8 @@ export const signUp = asyncHandler(async (req: Request, res: Response, next: Nex
   delete newUser._doc.isActive
   delete newUser._doc.isAdmin
 
-  const accessToken = generateAccessToken({ userId: newUser._id, email: newUser.email })
-  const refreshToken = generateRefreshToken({ userId: newUser._id, email: newUser.email })
+  const accessToken = await generateAccessToken({ userId: newUser._id, email: newUser.email })
+  const refreshToken = await generateRefreshToken({ userId: newUser._id, email: newUser.email })
 
   res.status(201).json({
     message: 'Sign up successful',
@@ -73,8 +73,8 @@ export const login = asyncHandler(async (req: Request, res: Response, next: Next
   delete user._doc.isActive
   delete user._doc.isAdmin
 
-  const accessToken = generateAccessToken({ userId: user._id, email: user.email })
-  const refreshToken = generateRefreshToken({ userId: user._id, email: user.email })
+  const accessToken = await generateAccessToken({ userId: user._id, email: user.email })
+  const refreshToken = await generateRefreshToken({ userId: user._id, email: user.email })
   res.status(200).json({
     message: 'Login successful',
     user: user.toObject(),
@@ -142,9 +142,9 @@ export const loginWithGoogle = asyncHandler(async (req: Request, res: Response, 
 export const refreshToken = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const refreshToken = req.body?.refreshToken
 
-  const decoded = verifyRefreshToken(refreshToken)
+  const decoded = await verifyRefreshToken(refreshToken)
 
-  const accessToken = generateAccessToken({ userId: decoded.userId, email: decoded.email })
+  const accessToken = await generateAccessToken({ userId: decoded.userId, email: decoded.email })
 
   res.status(200).json({
     accessToken
@@ -170,7 +170,7 @@ export const checkAuth = asyncHandler(async (req: Request, res: Response, next: 
 
 // PATCH /auth/update-user (admin only)
 export const updateUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const currentUser = await User.findById(req.userId)
+  const currentUser = await User.findById(req.decoded?.userId)
 
   if (!currentUser) {
     throw new ApiError(404, 'User not found')
@@ -200,7 +200,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response, next:
 
 // PATCH /auth/me/update-profile
 export const updateMyProfile = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const currentUser = await User.findById(req.userId)
+  const currentUser = await User.findById(req.decoded?.userId)
 
   if (!currentUser) {
     throw new ApiError(404, 'User not found')
