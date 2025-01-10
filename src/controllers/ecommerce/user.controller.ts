@@ -75,6 +75,7 @@ export const login = asyncHandler(async (req: Request, res: Response, next: Next
 
   const accessToken = await generateAccessToken({ userId: user._id, email: user.email })
   const refreshToken = await generateRefreshToken({ userId: user._id, email: user.email })
+
   res.status(200).json({
     message: 'Login successful',
     user: user.toObject(),
@@ -96,22 +97,20 @@ export const loginWithGoogle = asyncHandler(async (req: Request, res: Response, 
   if (!user) {
     const newUser = new User({ name, email, photoUrl, isGoogleAccount: true })
     await newUser.save()
+
     delete newUser._doc.password
+    delete newUser._doc.isGoogleAccount
+    delete newUser._doc.isActive
+    delete newUser._doc.isAdmin
 
-    const accessToken = generateAccessToken(newUser._id)
-    const refreshToken = generateRefreshToken(newUser._id)
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    })
+    const accessToken = await generateAccessToken({ userId: newUser._id, email: newUser.email })
+    const refreshToken = await generateRefreshToken({ userId: newUser._id, email: newUser.email })
 
     res.status(201).json({
       message: 'Login with Google successful',
       user: newUser.toObject(),
-      accessToken
+      accessToken,
+      refreshToken
     })
   } else {
     if (!user.isGoogleAccount) {
@@ -119,21 +118,18 @@ export const loginWithGoogle = asyncHandler(async (req: Request, res: Response, 
     }
 
     delete user._doc.password
+    delete user._doc.isGoogleAccount
+    delete user._doc.isActive
+    delete user._doc.isAdmin
 
-    const accessToken = generateAccessToken(user._id)
-    const refreshToken = generateRefreshToken(user._id)
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    })
+    const accessToken = await generateAccessToken({ userId: user._id, email: user.email })
+    const refreshToken = await generateRefreshToken({ userId: user._id, email: user.email })
 
     res.status(200).json({
       message: 'Login with Google successful',
       user: user.toObject(),
-      accessToken
+      accessToken,
+      refreshToken
     })
   }
 })
