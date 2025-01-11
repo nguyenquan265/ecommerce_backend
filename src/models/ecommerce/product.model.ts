@@ -59,17 +59,6 @@ const productSchema = new Schema<IProduct>(
   }
 )
 
-productSchema.pre('save', function (next) {
-  if (!this.isModified('title')) return next()
-
-  this.slug = this.title
-    .toLowerCase()
-    .replace(/ /g, '-')
-    .replace(/[^\w-]+/g, '')
-
-  next()
-})
-
 const Product = models.Product || model<IProduct>('Product', productSchema)
 
 export default Product

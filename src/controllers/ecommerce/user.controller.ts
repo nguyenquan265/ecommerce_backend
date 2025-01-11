@@ -7,7 +7,6 @@ import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '~/utils/token'
 
-// POST /auth/sign-up
 export const signUp = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const { name, email, password } = req.body
 
@@ -42,7 +41,6 @@ export const signUp = asyncHandler(async (req: Request, res: Response, next: Nex
   })
 })
 
-// POST /auth/login
 export const login = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body
 
@@ -84,7 +82,6 @@ export const login = asyncHandler(async (req: Request, res: Response, next: Next
   })
 })
 
-// POST /auth/google-login
 export const loginWithGoogle = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const { name, email, photoUrl } = req.body
 
@@ -134,7 +131,6 @@ export const loginWithGoogle = asyncHandler(async (req: Request, res: Response, 
   }
 })
 
-// POST /auth/refresh-token
 export const refreshToken = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const refreshToken = req.body?.refreshToken
 
@@ -147,7 +143,6 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response, nex
   })
 })
 
-// GET /auth/check-auth
 export const checkAuth = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const currentUser = await User.findById(req.decoded?.userId)
 
@@ -164,16 +159,12 @@ export const checkAuth = asyncHandler(async (req: Request, res: Response, next: 
   })
 })
 
-// PATCH /auth/update-user (admin only)
+// admin only
 export const updateUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const currentUser = await User.findById(req.decoded?.userId)
 
-  if (!currentUser) {
-    throw new ApiError(404, 'User not found')
-  }
-
-  if (!currentUser.isAdmin) {
-    throw new ApiError(403, 'Not authorized to update user')
+  if (!currentUser?.isAdmin) {
+    throw new ApiError(403, 'Not authorized to delete category')
   }
 
   const { userId } = req.body
@@ -194,7 +185,6 @@ export const updateUser = asyncHandler(async (req: Request, res: Response, next:
   })
 })
 
-// PATCH /auth/me/update-profile
 export const updateMyProfile = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const currentUser = await User.findById(req.decoded?.userId)
 
@@ -232,5 +222,4 @@ export const updateMyProfile = asyncHandler(async (req: Request, res: Response, 
   })
 })
 
-// PATCH /auth/me/update-password
 export const updateMyPassword = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {})

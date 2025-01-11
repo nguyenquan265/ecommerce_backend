@@ -16,11 +16,12 @@ export const getAllCategories = asyncHandler(async (req: Request, res: Response,
   })
 })
 
+// admin only
 export const createCategory = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const currentUser = await User.findById(req.decoded?.userId)
 
-  if (!currentUser || !currentUser.isAdmin) {
-    throw new ApiError(403, 'Not authorized to create category')
+  if (!currentUser?.isAdmin) {
+    throw new ApiError(403, 'Not authorized to delete category')
   }
 
   const { name } = req.body
@@ -57,11 +58,12 @@ export const getCategory = asyncHandler(async (req: Request, res: Response, next
   })
 })
 
+// admin only
 export const updateCategory = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const currentUser = await User.findById(req.decoded?.userId)
 
-  if (!currentUser || !currentUser.isAdmin) {
-    throw new ApiError(403, 'Not authorized to update category')
+  if (!currentUser?.isAdmin) {
+    throw new ApiError(403, 'Not authorized to delete category')
   }
 
   const { categoryId } = req.params
@@ -83,10 +85,11 @@ export const updateCategory = asyncHandler(async (req: Request, res: Response, n
   })
 })
 
+// admin only
 export const deleteCategory = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const currentUser = await User.findById(req.decoded?.userId)
 
-  if (!currentUser || !currentUser.isAdmin) {
+  if (!currentUser?.isAdmin) {
     throw new ApiError(403, 'Not authorized to delete category')
   }
 
