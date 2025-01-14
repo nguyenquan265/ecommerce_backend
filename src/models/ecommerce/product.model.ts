@@ -5,16 +5,14 @@ interface IProduct extends Document {
   title: string
   slug: string
   description: string
-  categories: {
-    _id: string
-    name: string
-    slug: string
-  }[]
+  category: Types.ObjectId
   price: number
   priceDiscount: number
   quantity: number
   mainImage: string
-  subImages: string[]
+  subImages: {
+    url: string
+  }[]
   isDeleted: boolean
 }
 
@@ -29,12 +27,10 @@ const productSchema = new Schema<IProduct>(
       unique: true
     },
     description: String,
-    categories: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Category'
-      }
-    ],
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: 'Category'
+    },
     price: {
       type: Number,
       required: true
@@ -45,10 +41,14 @@ const productSchema = new Schema<IProduct>(
     },
     quantity: {
       type: Number,
-      default: 0
+      default: 10
     },
     mainImage: String,
-    subImages: [String],
+    subImages: [
+      {
+        url: String
+      }
+    ],
     isDeleted: {
       type: Boolean,
       default: false

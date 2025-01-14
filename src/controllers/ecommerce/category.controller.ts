@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
 
 import Category from '~/models/ecommerce/category.model'
+import Product from '~/models/ecommerce/product.model'
 import User from '~/models/ecommerce/user.model'
 
 import ApiError from '~/utils/ApiError'
@@ -97,6 +98,12 @@ export const deleteCategory = asyncHandler(async (req: Request, res: Response, n
 
   if (!categoryId) {
     throw new ApiError(400, 'Category ID is required')
+  }
+
+  const existedProducts = await Product.find({ category: categoryId }).lean()
+
+  if (existedProducts.length) {
+    throw new ApiError(400, 'Category has products, cannot delete')
   }
 
   const category = await Category.findByIdAndDelete(categoryId)

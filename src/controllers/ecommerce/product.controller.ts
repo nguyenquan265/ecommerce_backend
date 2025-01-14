@@ -12,12 +12,7 @@ export const getAllProducts = asyncHandler(async (req: Request, res: Response, n
 
   const filter = currentUser?.isAdmin ? {} : { isDeleted: { $ne: true } }
 
-  const products = await Product.find(filter).populate('categories').lean()
-
-  res.status(200).json({
-    message: 'Get all products successfully',
-    products
-  })
+  const products = await Product.find(filter).populate('category').lean()
 
   res.status(200).json({ message: 'Get all products successfully', products })
 })
@@ -27,7 +22,7 @@ export const getProduct = asyncHandler(async (req: Request, res: Response, next:
 
   const filter = currentUser?.isAdmin ? {} : { isDeleted: { $ne: true } }
 
-  const product = await Product.findById(req.params.productId, filter).populate('categories').lean()
+  const product = await Product.findById(req.params.productId, filter).populate('category').lean()
 
   if (!product) {
     throw new ApiError(404, 'Product not found')
@@ -44,14 +39,14 @@ export const createProduct = asyncHandler(async (req: Request, res: Response, ne
     throw new ApiError(403, 'Not authorized to delete category')
   }
 
-  const { title, description, categories, price, priceDiscount, quantity, mainImage, subImages } = req.body
+  const { title, description, categoryId, price, priceDiscount, quantity, mainImage, subImages } = req.body
   const slug = slugify(title)
 
   const product = await Product.create({
     title,
     slug,
     description,
-    categories,
+    category: categoryId,
     price,
     priceDiscount,
     quantity,
@@ -70,7 +65,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response, ne
     throw new ApiError(403, 'Not authorized to delete category')
   }
 
-  const { title, description, categories, price, priceDiscount, quantity, mainImage, subImages } = req.body
+  const { title, description, categoryId, price, priceDiscount, quantity, mainImage, subImages } = req.body
 
   const product = await Product.findByIdAndUpdate(
     req.params.productId,
@@ -78,7 +73,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response, ne
       title,
       slug: slugify(title),
       description,
-      categories,
+      category: categoryId,
       price,
       priceDiscount,
       quantity,
