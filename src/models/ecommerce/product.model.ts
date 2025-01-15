@@ -6,6 +6,7 @@ interface IProduct extends Document {
   slug: string
   description: string
   category: Types.ObjectId
+  size: string
   price: number
   priceDiscount: number
   quantity: number
@@ -31,6 +32,7 @@ const productSchema = new Schema<IProduct>(
       type: Schema.Types.ObjectId,
       ref: 'Category'
     },
+    size: String,
     price: {
       type: Number,
       required: true

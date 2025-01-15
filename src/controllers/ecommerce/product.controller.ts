@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
+import { SortOrder } from 'mongoose'
 
 import Product from '~/models/ecommerce/product.model'
 import User from '~/models/ecommerce/user.model'
@@ -7,14 +8,70 @@ import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
 import slugify from '~/utils/slugify'
 
-export const getAllProducts = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+interface GetProductsRequest extends Request {
+  query: {
+    page?: string
+    limit?: string
+    searchString?: string
+    sortBy?: 'asc' | 'desc' | 'a-z' | 'z-a' | 'price-asc' | 'price-desc'
+  }
+}
+
+export const getAllProducts = asyncHandler(async (req: GetProductsRequest, res: Response, next: NextFunction) => {
+  const { page = '1', limit = '10', searchString = '', sortBy = 'desc' } = req.query
+  const skip = (parseInt(page) - 1) * parseInt(limit)
+
   const currentUser = await User.findById(req.decoded?.userId)
 
-  const filter = currentUser?.isAdmin ? {} : { isDeleted: { $ne: true } }
+  let filter: any = currentUser?.isAdmin ? {} : { isDeleted: { $ne: true } }
+  let sort: any = { createdAt: -1 }
 
-  const products = await Product.find(filter).populate('category').lean()
+  if (searchString) {
+    const searchRegex = new RegExp(searchString, 'i')
 
-  res.status(200).json({ message: 'Get all products successfully', products })
+    filter = {
+      ...filter,
+      $or: [{ title: searchRegex }, { slug: searchRegex }]
+    }
+  }
+
+  if (sortBy === 'asc') {
+    sort = { createdAt: 1 as SortOrder }
+  } else if (sortBy === 'a-z') {
+    sort = { title: 1 as SortOrder }
+  } else if (sortBy === 'z-a') {
+    sort = { title: -1 as SortOrder }
+  } else if (sortBy === 'price-asc') {
+    sort = { price: 1 as SortOrder }
+  } else if (sortBy === 'price-desc') {
+    sort = { price: -1 as SortOrder }
+  } else {
+    sort = { createdAt: -1 as SortOrder }
+  }
+
+  const [totalProducts, products] = await Promise.all([
+    Product.countDocuments(filter),
+    Product.find(filter)
+      .populate('category')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort(sort)
+      .lean()
+  ])
+
+  const totalPages = Math.ceil(totalProducts / parseInt(limit)) || 1
+
+  res.status(200).json({
+    message: 'Get all products successfully',
+    products,
+    pagination: {
+      totalProducts,
+      totalPages,
+      currentPage: parseInt(page),
+      limit: parseInt(limit)
+    }
+  })
 })
 
 export const getProduct = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
@@ -39,7 +96,7 @@ export const createProduct = asyncHandler(async (req: Request, res: Response, ne
     throw new ApiError(403, 'Not authorized to delete category')
   }
 
-  const { title, description, categoryId, price, priceDiscount, quantity, mainImage, subImages } = req.body
+  const { title, description, categoryId, size, price, priceDiscount, quantity, mainImage, subImages } = req.body
   const slug = slugify(title)
 
   const product = await Product.create({
@@ -47,6 +104,7 @@ export const createProduct = asyncHandler(async (req: Request, res: Response, ne
     slug,
     description,
     category: categoryId,
+    size,
     price,
     priceDiscount,
     quantity,
@@ -65,7 +123,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response, ne
     throw new ApiError(403, 'Not authorized to delete category')
   }
 
-  const { title, description, categoryId, price, priceDiscount, quantity, mainImage, subImages } = req.body
+  const { title, description, categoryId, size, price, priceDiscount, quantity, mainImage, subImages } = req.body
 
   const product = await Product.findByIdAndUpdate(
     req.params.productId,
@@ -74,6 +132,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response, ne
       slug: slugify(title),
       description,
       category: categoryId,
+      size,
       price,
       priceDiscount,
       quantity,
