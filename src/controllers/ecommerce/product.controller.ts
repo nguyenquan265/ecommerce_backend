@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from 'express'
-import { SortOrder } from 'mongoose'
 
 import Product from '~/models/ecommerce/product.model'
 import User from '~/models/ecommerce/user.model'
@@ -21,6 +20,8 @@ export const getAllProducts = asyncHandler(async (req: GetProductsRequest, res: 
   const { page = '1', limit = '10', searchString = '', sortBy = 'desc' } = req.query
   const skip = (parseInt(page) - 1) * parseInt(limit)
 
+  console.log(sortBy)
+
   const currentUser = await User.findById(req.decoded?.userId)
 
   let filter: any = currentUser?.isAdmin ? {} : { isDeleted: { $ne: true } }
@@ -36,28 +37,22 @@ export const getAllProducts = asyncHandler(async (req: GetProductsRequest, res: 
   }
 
   if (sortBy === 'asc') {
-    sort = { createdAt: 1 as SortOrder }
+    sort = { createdAt: 1 }
   } else if (sortBy === 'a-z') {
-    sort = { title: 1 as SortOrder }
+    sort = { title: 1 }
   } else if (sortBy === 'z-a') {
-    sort = { title: -1 as SortOrder }
+    sort = { title: -1 }
   } else if (sortBy === 'price-asc') {
-    sort = { price: 1 as SortOrder }
+    sort = { price: 1 }
   } else if (sortBy === 'price-desc') {
-    sort = { price: -1 as SortOrder }
+    sort = { price: -1 }
   } else {
-    sort = { createdAt: -1 as SortOrder }
+    sort = { createdAt: -1 }
   }
 
   const [totalProducts, products] = await Promise.all([
     Product.countDocuments(filter),
-    Product.find(filter)
-      .populate('category')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit))
-      .sort(sort)
-      .lean()
+    Product.find(filter).populate('category').skip(skip).limit(parseInt(limit)).sort(sort).lean()
   ])
 
   const totalPages = Math.ceil(totalProducts / parseInt(limit)) || 1
