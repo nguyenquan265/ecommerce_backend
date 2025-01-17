@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 
+import Category from '~/models/ecommerce/category.model'
 import Product from '~/models/ecommerce/product.model'
 import User from '~/models/ecommerce/user.model'
 
@@ -13,14 +14,13 @@ interface GetProductsRequest extends Request {
     limit?: string
     searchString?: string
     sortBy?: 'asc' | 'desc' | 'a-z' | 'z-a' | 'price-asc' | 'price-desc'
+    categorySlug?: string
   }
 }
 
 export const getAllProducts = asyncHandler(async (req: GetProductsRequest, res: Response, next: NextFunction) => {
-  const { page = '1', limit = '10', searchString = '', sortBy = 'desc' } = req.query
+  const { page = '1', limit = '10', searchString = '', sortBy = 'desc', categorySlug } = req.query
   const skip = (parseInt(page) - 1) * parseInt(limit)
-
-  console.log(sortBy)
 
   const currentUser = await User.findById(req.decoded?.userId)
 
@@ -33,6 +33,17 @@ export const getAllProducts = asyncHandler(async (req: GetProductsRequest, res: 
     filter = {
       ...filter,
       $or: [{ title: searchRegex }, { slug: searchRegex }]
+    }
+  }
+
+  if (categorySlug !== 'all') {
+    const category = await Category.findOne({ slug: categorySlug })
+
+    if (category) {
+      filter = {
+        ...filter,
+        category: category._id
+      }
     }
   }
 
