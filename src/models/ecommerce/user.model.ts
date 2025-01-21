@@ -9,7 +9,7 @@ interface IUser extends Document {
   password?: string
   phoneNumber?: string
   photoUrl: string
-  address?: {
+  shippingAddress?: {
     address: string
     city: string
     district: string
@@ -55,7 +55,7 @@ const userSchema = new Schema<IUser>(
       type: String,
       default: 'https://png.pngtree.com/png-clipart/20210129/ourmid/pngtree-default-male-avatar-png-image_2811083.jpg'
     },
-    address: {
+    shippingAddress: {
       address: String,
       city: String,
       district: String,

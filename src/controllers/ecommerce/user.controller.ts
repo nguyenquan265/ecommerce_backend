@@ -26,7 +26,6 @@ export const signUp = asyncHandler(async (req: Request, res: Response, next: Nex
   const newUser = new User({ name, email, password: hashedPassword })
   await newUser.save()
   delete newUser._doc.password
-  delete newUser._doc.isGoogleAccount
   delete newUser._doc.isActive
   delete newUser._doc.isAdmin
 
@@ -67,7 +66,6 @@ export const login = asyncHandler(async (req: Request, res: Response, next: Next
   }
 
   delete user._doc.password
-  delete user._doc.isGoogleAccount
   delete user._doc.isActive
   delete user._doc.isAdmin
 
@@ -96,7 +94,6 @@ export const loginWithGoogle = asyncHandler(async (req: Request, res: Response, 
     await newUser.save()
 
     delete newUser._doc.password
-    delete newUser._doc.isGoogleAccount
     delete newUser._doc.isActive
     delete newUser._doc.isAdmin
 
@@ -115,7 +112,6 @@ export const loginWithGoogle = asyncHandler(async (req: Request, res: Response, 
     }
 
     delete user._doc.password
-    delete user._doc.isGoogleAccount
     delete user._doc.isActive
     delete user._doc.isAdmin
 
@@ -150,7 +146,6 @@ export const checkAuth = asyncHandler(async (req: Request, res: Response, next: 
     throw new ApiError(404, 'User not found')
   }
 
-  delete currentUser._doc.isGoogleAccount
   delete currentUser._doc.isActive
   delete currentUser._doc.isAdmin
 
