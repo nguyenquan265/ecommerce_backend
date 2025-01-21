@@ -8,7 +8,7 @@ export const authenticate: RequestHandler = async (req: Request, res: Response, 
 
   try {
     if (!accessToken) {
-      return res.status(401).json({ message: 'Unauthorized! (token not found)' })
+      return res.status(401).json({ message: 'Unauthorized! (Access token not found)' })
     }
 
     const decoded = await verifyAccessToken(accessToken)
@@ -19,12 +19,12 @@ export const authenticate: RequestHandler = async (req: Request, res: Response, 
   } catch (error: any) {
     if (error.message?.includes('jwt expired')) {
       return res.status(401).json({
-        message: 'Unauthorized! (token expired)'
+        message: 'Unauthorized! (Access token expired)'
       })
     }
 
     return res.status(401).json({
-      message: 'Unauthorized! (token invalid)'
+      message: 'Unauthorized! (Access token invalid)'
     })
   }
 }

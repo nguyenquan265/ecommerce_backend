@@ -37,6 +37,12 @@ const errorHandler = (error: any, req: Request, res: Response, next: NextFunctio
     errorMsg = 'Duplicate key error.'
   }
 
+  // JWT error handling for refresh token of ecommerce
+  if (error.message?.includes('jwt expired')) {
+    errorCode = 401
+    errorMsg = 'Unauthorized! (Refresh token expired)'
+  }
+
   if (error) res.status(errorCode).json({ message: errorMsg })
 }
 
