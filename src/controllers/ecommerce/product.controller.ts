@@ -83,9 +83,11 @@ export const getAllProducts = asyncHandler(async (req: GetProductsRequest, res: 
 export const getProduct = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const currentUser = await User.findById(req.decoded?.userId)
 
-  const filter = currentUser?.isAdmin ? {} : { isDeleted: { $ne: true } }
+  const filter = currentUser?.isAdmin
+    ? { _id: req.params.productId }
+    : { _id: req.params.productId, isDeleted: { $ne: true } }
 
-  const product = await Product.findById(req.params.productId, filter).populate('category').lean()
+  const product = await Product.findById(filter).populate('category').lean()
 
   if (!product) {
     throw new ApiError(404, 'Product not found')
