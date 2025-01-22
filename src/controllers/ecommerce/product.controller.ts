@@ -24,7 +24,7 @@ export const getAllProducts = asyncHandler(async (req: GetProductsRequest, res: 
 
   const currentUser = await User.findById(req.decoded?.userId)
 
-  let filter: any = currentUser?.isAdmin ? {} : { isDeleted: { $ne: true } }
+  let filter: any = currentUser?.isAdmin ? {} : { isDeleted: false }
   let sort: any = { createdAt: -1 }
 
   if (searchString) {
@@ -83,11 +83,9 @@ export const getAllProducts = asyncHandler(async (req: GetProductsRequest, res: 
 export const getProduct = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const currentUser = await User.findById(req.decoded?.userId)
 
-  const filter = currentUser?.isAdmin
-    ? { _id: req.params.productId }
-    : { _id: req.params.productId, isDeleted: { $ne: true } }
+  const filter = currentUser?.isAdmin ? { _id: req.params.productId } : { _id: req.params.productId, isDeleted: false }
 
-  const product = await Product.findById(filter).populate('category').lean()
+  const product = await Product.findOne(filter).populate('category').lean()
 
   if (!product) {
     throw new ApiError(404, 'Product not found')
