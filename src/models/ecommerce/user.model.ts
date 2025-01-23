@@ -3,8 +3,6 @@ import { Schema, Document, model, Types, models } from 'mongoose'
 interface IUser extends Document {
   _id: Types.ObjectId
   name: string
-  firstName?: string
-  lastName?: string
   email: string
   password?: string
   phoneNumber?: string
@@ -33,8 +31,6 @@ const userSchema = new Schema<IUser>(
       min: 6,
       max: 20
     },
-    firstName: String,
-    lastName: String,
     email: {
       type: String,
       required: true,
@@ -50,18 +46,26 @@ const userSchema = new Schema<IUser>(
       type: String,
       select: false
     },
-    phoneNumber: String,
+    phoneNumber: {
+      type: String,
+      validate: {
+        validator: function (v: string) {
+          return /(84|0[3|5|7|8|9])+([0-9]{8})\b/.test(v)
+        },
+        message: (props) => `${props.value} is not a valid phone number!`
+      }
+    },
     photoUrl: {
       type: String,
       default: 'https://png.pngtree.com/png-clipart/20210129/ourmid/pngtree-default-male-avatar-png-image_2811083.jpg'
     },
     shippingAddress: {
       address: String,
-      city: String,
+      province: String,
+      provinceName: String,
       district: String,
-      ward: String,
-      cityName: String,
       districtName: String,
+      ward: String,
       wardName: String
     },
     isGoogleAccount: {

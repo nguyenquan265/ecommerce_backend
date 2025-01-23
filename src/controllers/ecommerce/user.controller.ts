@@ -187,26 +187,27 @@ export const updateMyProfile = asyncHandler(async (req: Request, res: Response, 
     throw new ApiError(404, 'User not found')
   }
 
-  const { name, firstName, lastName, phoneNumber, address } = req.body
+  const { name, phoneNumber, province, district, ward, address, provinceName, districtName, wardName } = req.body
+  const phoneReg = /^0\d{9}$/
 
-  if (name) {
-    currentUser.name = name
+  if (!name || !phoneNumber) {
+    throw new ApiError(400, 'Please provide name and phone number')
   }
 
-  if (firstName) {
-    currentUser.firstName = firstName
+  if (!phoneReg.test(phoneNumber)) {
+    throw new ApiError(400, 'Invalid phone number')
   }
 
-  if (lastName) {
-    currentUser.lastName = lastName
-  }
-
-  if (phoneNumber) {
-    currentUser.phoneNumber = phoneNumber
-  }
-
-  if (address) {
-    currentUser.address = address
+  currentUser.name = name
+  currentUser.phoneNumber = phoneNumber
+  currentUser.shippingAddress = {
+    province,
+    district,
+    ward,
+    address,
+    provinceName,
+    districtName,
+    wardName
   }
 
   await currentUser.save()
