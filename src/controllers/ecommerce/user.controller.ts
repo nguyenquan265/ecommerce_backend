@@ -218,4 +218,30 @@ export const updateMyProfile = asyncHandler(async (req: Request, res: Response, 
   })
 })
 
-export const updateMyPassword = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {})
+export const updateMyPassword = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const { currentPassword, newPassword } = req.body
+
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, 'Please provide current password and new password')
+  }
+
+  const currentUser = await User.findById(req.decoded?.userId).select('+password')
+
+  if (!currentUser) {
+    throw new ApiError(404, 'User not found')
+  }
+
+  if (!(await compare(currentPassword, currentUser.password))) {
+    throw new ApiError(400, 'Invalid current password')
+  }
+
+  const salt = await genSalt(10)
+  const hashedPassword = await hash(newPassword, salt)
+
+  currentUser.password = hashedPassword
+  await currentUser.save()
+
+  res.status(200).json({
+    message: 'Password updated'
+  })
+})
