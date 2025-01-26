@@ -1,7 +1,9 @@
 import { compare, genSalt, hash } from 'bcryptjs'
 import { NextFunction, Request, Response } from 'express'
+import { ObjectId } from 'mongoose'
 
 import User from '~/models/ecommerce/user.model'
+import Product from '~/models/ecommerce/product.model'
 
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
@@ -140,7 +142,10 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response, nex
 })
 
 export const checkAuth = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const currentUser = await User.findById(req.decoded?.userId)
+  const currentUser = await User.findById(req.decoded?.userId).populate({
+    path: 'wishlistItems',
+    select: '_id title price priceDiscount mainImage'
+  })
 
   if (!currentUser) {
     throw new ApiError(404, 'User not found')
@@ -243,5 +248,67 @@ export const updateMyPassword = asyncHandler(async (req: Request, res: Response,
 
   res.status(200).json({
     message: 'Password updated'
+  })
+})
+
+export const addToWishlist = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const currentUser = await User.findById(req.decoded?.userId)
+
+  if (!currentUser) {
+    throw new ApiError(404, 'User not found')
+  }
+
+  const { productId } = req.body
+
+  if (!productId) {
+    throw new ApiError(400, 'Please provide productId')
+  }
+
+  const product = await Product.findById(productId)
+
+  if (!product) {
+    throw new ApiError(404, 'Product not found')
+  }
+
+  if (currentUser.wishlistItems.includes(product._id)) {
+    throw new ApiError(400, 'Product already in wishlist')
+  }
+
+  currentUser.wishlistItems.push(product._id)
+  await currentUser.save()
+
+  res.status(200).json({
+    message: 'Product added to wishlist',
+    user: currentUser.toObject()
+  })
+})
+
+export const removeFromWishlist = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const currentUser = await User.findById(req.decoded?.userId)
+
+  if (!currentUser) {
+    throw new ApiError(404, 'User not found')
+  }
+
+  const { productId } = req.body
+
+  if (!productId) {
+    throw new ApiError(400, 'Please provide productId')
+  }
+
+  const product = await Product.findById(productId)
+
+  if (!product) {
+    throw new ApiError(404, 'Product not found')
+  }
+
+  currentUser.wishlistItems = currentUser.wishlistItems.filter(
+    (item: ObjectId) => item.toString() !== product._id.toString()
+  )
+  await currentUser.save()
+
+  res.status(200).json({
+    message: 'Product removed from wishlist',
+    user: currentUser.toObject()
   })
 })

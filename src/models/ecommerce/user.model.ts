@@ -16,6 +16,7 @@ interface IUser extends Document {
     districtName: string
     wardName: string
   }
+  wishlistItems: Types.ObjectId[]
   isGoogleAccount: boolean
   isActive: boolean
   isAdmin: boolean
@@ -68,6 +69,12 @@ const userSchema = new Schema<IUser>(
       ward: String,
       wardName: String
     },
+    wishlistItems: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Product'
+      }
+    ],
     isGoogleAccount: {
       type: Boolean,
       default: false
