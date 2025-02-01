@@ -99,7 +99,7 @@ export const createProduct = asyncHandler(async (req: Request, res: Response, ne
   const currentUser = await User.findById(req.decoded?.userId)
 
   if (!currentUser?.isAdmin) {
-    throw new ApiError(403, 'Not authorized to delete category')
+    throw new ApiError(403, 'Not authorized to create product')
   }
 
   const { title, description, categoryId, size, price, priceDiscount, quantity, mainImage, subImages } = req.body
@@ -126,7 +126,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response, ne
   const currentUser = await User.findById(req.decoded?.userId)
 
   if (!currentUser?.isAdmin) {
-    throw new ApiError(403, 'Not authorized to delete category')
+    throw new ApiError(403, 'Not authorized to update product')
   }
 
   const { title, description, categoryId, size, price, priceDiscount, quantity, mainImage, subImages } = req.body
@@ -160,7 +160,7 @@ export const deleteProduct = asyncHandler(async (req: Request, res: Response, ne
   const currentUser = await User.findById(req.decoded?.userId)
 
   if (!currentUser?.isAdmin) {
-    throw new ApiError(403, 'Not authorized to delete category')
+    throw new ApiError(403, 'Not authorized to delete product')
   }
 
   const product = await Product.findByIdAndUpdate(req.params.productId, { isDeleted: true }).lean()

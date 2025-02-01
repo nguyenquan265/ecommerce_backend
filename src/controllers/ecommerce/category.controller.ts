@@ -22,7 +22,7 @@ export const createCategory = asyncHandler(async (req: Request, res: Response, n
   const currentUser = await User.findById(req.decoded?.userId)
 
   if (!currentUser?.isAdmin) {
-    throw new ApiError(403, 'Not authorized to delete category')
+    throw new ApiError(403, 'Not authorized to create category')
   }
 
   const { name } = req.body
@@ -64,7 +64,7 @@ export const updateCategory = asyncHandler(async (req: Request, res: Response, n
   const currentUser = await User.findById(req.decoded?.userId)
 
   if (!currentUser?.isAdmin) {
-    throw new ApiError(403, 'Not authorized to delete category')
+    throw new ApiError(403, 'Not authorized to update category')
   }
 
   const { categoryId } = req.params
