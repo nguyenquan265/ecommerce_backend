@@ -87,20 +87,69 @@ export const createUser = asyncHandler(async (req: Request, res: Response, next:
     throw new ApiError(403, 'Not authorized to create user')
   }
 
-  const { name, email, password, phoneNumber, photoUrl, shippingAddress, isAdmin } = req.body
+  const {
+    name,
+    email,
+    password,
+    phoneNumber,
+    province,
+    district,
+    ward,
+    address,
+    provinceName,
+    districtName,
+    wardName,
+    isAdmin,
+    isActive,
+    isGoogleAccount
+  } = req.body
+
+  if (!name || !email || !password) {
+    throw new ApiError(400, 'Please provide name, email and password')
+  }
+
+  const existedUser = await User.findOne({ email })
+
+  if (existedUser) {
+    throw new ApiError(400, 'Email already exists')
+  }
 
   const salt = await genSalt(10)
   const hashedPassword = await hash(password, salt)
+  let user: any
 
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    phoneNumber,
-    photoUrl,
-    shippingAddress,
-    isAdmin
-  })
+  if (province && provinceName) {
+    const shippingAddress = {
+      province,
+      district,
+      ward,
+      address,
+      provinceName,
+      districtName,
+      wardName
+    }
+
+    user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      phoneNumber,
+      shippingAddress,
+      isAdmin,
+      isActive,
+      isGoogleAccount
+    })
+  } else {
+    user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      phoneNumber,
+      isAdmin,
+      isActive,
+      isGoogleAccount
+    })
+  }
 
   res.status(201).json({
     message: 'Create user successfully',
@@ -116,25 +165,56 @@ export const updateUser = asyncHandler(async (req: Request, res: Response, next:
     throw new ApiError(403, 'Not authorized to update user')
   }
 
-  const { name, email, phoneNumber, photoUrl, shippingAddress, isActive, isAdmin } = req.body
+  const {
+    name,
+    email,
+    password,
+    phoneNumber,
+    province,
+    district,
+    ward,
+    address,
+    provinceName,
+    districtName,
+    wardName,
+    isActive,
+    isAdmin
+  } = req.body
 
-  const user = await User.findByIdAndUpdate(
-    req.params.userId,
-    {
-      name,
-      email,
-      phoneNumber,
-      photoUrl,
-      shippingAddress,
-      isActive,
-      isAdmin
-    },
-    { new: true }
-  ).lean()
+  if (!name || !email) {
+    throw new ApiError(400, 'Please provide name and email')
+  }
+
+  const user = await User.findById(req.params.userId)
 
   if (!user) {
     throw new ApiError(404, 'User not found')
   }
+
+  user.name = name
+  user.email = email
+  user.phoneNumber = phoneNumber
+  user.isActive = isActive
+  user.isAdmin = isAdmin
+
+  if (password) {
+    const salt = await genSalt(10)
+    user.password = await hash(password, salt)
+  }
+
+  if (province && provinceName) {
+    user.shippingAddress = {
+      province,
+      district,
+      ward,
+      address,
+      provinceName,
+      districtName,
+      wardName
+    }
+  }
+
+  await user.save()
 
   res.status(200).json({
     message: 'Update user successfully',

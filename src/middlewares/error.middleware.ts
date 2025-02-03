@@ -33,8 +33,9 @@ const errorHandler = (error: any, req: Request, res: Response, next: NextFunctio
   }
 
   if (error.code === 11000) {
+    const value = error.errmsg.match(/(["'])(\\?.)*?\1/)[0]
     errorCode = 400
-    errorMsg = 'Duplicate key error.'
+    errorMsg = `Duplicate field value: ${value}.`
   }
 
   // JWT error handling for refresh token of ecommerce

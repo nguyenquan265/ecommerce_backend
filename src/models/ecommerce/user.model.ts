@@ -48,13 +48,7 @@ const userSchema = new Schema<IUser>(
       select: false
     },
     phoneNumber: {
-      type: String,
-      validate: {
-        validator: function (v: string) {
-          return /(84|0[3|5|7|8|9])+([0-9]{8})\b/.test(v)
-        },
-        message: (props) => `${props.value} is not a valid phone number!`
-      }
+      type: String
     },
     photoUrl: {
       type: String,
