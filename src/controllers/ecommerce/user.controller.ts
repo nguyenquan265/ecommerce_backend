@@ -103,6 +103,7 @@ export const createUser = asyncHandler(async (req: Request, res: Response, next:
     isActive,
     isGoogleAccount
   } = req.body
+  const phoneReg = /^0\d{9}$/
 
   if (!name || !email || !password) {
     throw new ApiError(400, 'Please provide name, email and password')
@@ -117,6 +118,10 @@ export const createUser = asyncHandler(async (req: Request, res: Response, next:
   const salt = await genSalt(10)
   const hashedPassword = await hash(password, salt)
   let user: any
+
+  if (phoneNumber && !phoneReg.test(phoneNumber)) {
+    throw new ApiError(400, 'Invalid phone number')
+  }
 
   if (province && provinceName) {
     const shippingAddress = {
@@ -180,6 +185,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response, next:
     isActive,
     isAdmin
   } = req.body
+  const phoneReg = /^0\d{9}$/
 
   if (!name || !email) {
     throw new ApiError(400, 'Please provide name and email')
@@ -189,6 +195,10 @@ export const updateUser = asyncHandler(async (req: Request, res: Response, next:
 
   if (!user) {
     throw new ApiError(404, 'User not found')
+  }
+
+  if (phoneNumber && !phoneReg.test(phoneNumber)) {
+    throw new ApiError(400, 'Invalid phone number')
   }
 
   user.name = name
