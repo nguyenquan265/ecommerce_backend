@@ -1,6 +1,6 @@
 import { Router } from 'express'
 
-import { authenticate } from '~/middlewares/ecommerce/auth.middleware'
+import { authenticate, isAdmin } from '~/middlewares/ecommerce/auth.middleware'
 import {
   createCategory,
   deleteCategory,
@@ -12,9 +12,9 @@ import {
 const router = Router()
 
 router.get('/', getAllCategories)
-router.post('/', authenticate, createCategory)
+router.post('/', authenticate, isAdmin, createCategory)
 router.get('/:categoryId', getCategory)
-router.patch('/:categoryId', authenticate, updateCategory)
-router.delete('/:categoryId', authenticate, deleteCategory)
+router.patch('/:categoryId', authenticate, isAdmin, updateCategory)
+router.delete('/:categoryId', authenticate, isAdmin, deleteCategory)
 
 export default router

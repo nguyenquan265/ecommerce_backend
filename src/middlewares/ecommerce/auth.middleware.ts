@@ -1,5 +1,7 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express'
 
+import User from '~/models/ecommerce/user.model'
+
 import { verifyAccessToken } from '~/utils/token'
 
 export const authenticate: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
@@ -27,4 +29,14 @@ export const authenticate: RequestHandler = async (req: Request, res: Response, 
       message: 'Unauthorized! (Access token invalid)'
     })
   }
+}
+
+export const isAdmin: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  const currentUser = await User.findById(req.decoded?.userId)
+
+  if (!currentUser?.isAdmin) {
+    return res.status(403).json({ message: 'Not authorized to perform this action' })
+  }
+
+  next()
 }

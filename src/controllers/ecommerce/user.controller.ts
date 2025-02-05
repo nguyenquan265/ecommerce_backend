@@ -81,12 +81,6 @@ export const getUser = asyncHandler(async (req: Request, res: Response, next: Ne
 
 // admin only
 export const createUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const currentUser = await User.findById(req.decoded?.userId)
-
-  if (!currentUser?.isAdmin) {
-    throw new ApiError(403, 'Not authorized to create user')
-  }
-
   const {
     name,
     email,
@@ -164,12 +158,6 @@ export const createUser = asyncHandler(async (req: Request, res: Response, next:
 
 // admin only
 export const updateUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const currentUser = await User.findById(req.decoded?.userId)
-
-  if (!currentUser?.isAdmin) {
-    throw new ApiError(403, 'Not authorized to update user')
-  }
-
   const {
     name,
     email,
@@ -234,12 +222,6 @@ export const updateUser = asyncHandler(async (req: Request, res: Response, next:
 
 // admin only
 export const deleteUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const currentUser = await User.findById(req.decoded?.userId)
-
-  if (!currentUser?.isAdmin) {
-    throw new ApiError(403, 'Not authorized to delete user')
-  }
-
   const user = await User.findByIdAndDelete(req.params.userId)
 
   if (!user) {

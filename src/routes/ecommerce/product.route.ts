@@ -1,6 +1,6 @@
 import { Router } from 'express'
 
-import { authenticate } from '~/middlewares/ecommerce/auth.middleware'
+import { authenticate, isAdmin } from '~/middlewares/ecommerce/auth.middleware'
 import {
   createProduct,
   deleteProduct,
@@ -12,11 +12,11 @@ import {
 const router = Router()
 
 router.get('/', getAllProducts)
-router.post('/', authenticate, createProduct)
+router.post('/', authenticate, isAdmin, createProduct)
 router.get('/admin', authenticate, getAllProducts)
 router.get('/admin/:productId', authenticate, getProduct)
 router.get('/:productId', getProduct)
-router.patch('/:productId', authenticate, updateProduct)
-router.delete('/:productId', authenticate, deleteProduct)
+router.patch('/:productId', authenticate, isAdmin, updateProduct)
+router.delete('/:productId', authenticate, isAdmin, deleteProduct)
 
 export default router

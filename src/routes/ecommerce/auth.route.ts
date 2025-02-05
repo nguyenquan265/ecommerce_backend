@@ -9,8 +9,7 @@ import {
   removeFromWishlist,
   signUp,
   updateMyPassword,
-  updateMyProfile,
-  updateUser
+  updateMyProfile
 } from '~/controllers/ecommerce/auth.controller'
 import { authenticate } from '~/middlewares/ecommerce/auth.middleware'
 
@@ -21,7 +20,6 @@ router.post('/login', login)
 router.post('/google-login', loginWithGoogle)
 router.patch('/refresh-token', refreshToken)
 router.get('/check-auth', authenticate, checkAuth)
-router.patch('/update-user', authenticate, updateUser)
 
 router.patch('/me/update-profile', authenticate, updateMyProfile)
 router.patch('/me/update-password', authenticate, updateMyPassword)

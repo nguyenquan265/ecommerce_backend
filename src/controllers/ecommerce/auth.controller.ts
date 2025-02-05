@@ -16,10 +16,10 @@ export const signUp = asyncHandler(async (req: Request, res: Response, next: Nex
     throw new ApiError(400, 'Please provide name, email and password')
   }
 
-  const user = await User.findOne({ email })
+  const user = await User.findOne({ email }).lean()
 
   if (user) {
-    throw new ApiError(400, 'User already exists')
+    throw new ApiError(400, 'Email already exists')
   }
 
   const salt = await genSalt(10)
@@ -156,32 +156,6 @@ export const checkAuth = asyncHandler(async (req: Request, res: Response, next: 
 
   res.status(200).json({
     user: currentUser
-  })
-})
-
-// admin only
-export const updateUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const currentUser = await User.findById(req.decoded?.userId)
-
-  if (!currentUser?.isAdmin) {
-    throw new ApiError(403, 'Not authorized to delete category')
-  }
-
-  const { userId } = req.body
-
-  if (!userId) {
-    throw new ApiError(400, 'Please provide userId')
-  }
-
-  const user = await User.findByIdAndUpdate(userId, req.body, { new: true, runValidators: true })
-
-  if (!user) {
-    throw new ApiError(404, 'User not found')
-  }
-
-  res.status(200).json({
-    message: 'User updated',
-    user: user.toObject()
   })
 })
 
