@@ -3,7 +3,7 @@ import { Router } from 'express'
 import { authenticate, isAdmin } from '~/middlewares/ecommerce/auth.middleware'
 import {
   createProduct,
-  deleteProduct,
+  deleteAndRestoreProduct,
   getAllProducts,
   getProduct,
   updateProduct
@@ -17,6 +17,6 @@ router.get('/admin', authenticate, getAllProducts)
 router.get('/admin/:productId', authenticate, getProduct)
 router.get('/:productId', getProduct)
 router.patch('/:productId', authenticate, isAdmin, updateProduct)
-router.delete('/:productId', authenticate, isAdmin, deleteProduct)
+router.delete('/:productId', authenticate, isAdmin, deleteAndRestoreProduct)
 
 export default router

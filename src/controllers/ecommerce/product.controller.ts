@@ -144,12 +144,16 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response, ne
 })
 
 // admin only
-export const deleteProduct = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const product = await Product.findByIdAndUpdate(req.params.productId, { isDeleted: true }).lean()
+export const deleteAndRestoreProduct = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const product = await Product.findById(req.params.productId)
 
   if (!product) {
     throw new ApiError(404, 'Product not found')
   }
+
+  const isDeleted = product.isDeleted
+
+  await Product.findByIdAndUpdate(req.params.productId, { isDeleted: !isDeleted }).lean()
 
   res.status(200).json({ message: 'Delete product successfully' })
 })
