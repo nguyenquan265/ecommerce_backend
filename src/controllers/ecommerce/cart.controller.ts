@@ -54,7 +54,6 @@ export const addToCart = asyncHandler(async (req: AddToCartRequest, res: Respons
           quantity
         }
       ],
-      totalPrice: product.price * quantity,
       totalQuantity: quantity
     })
 
@@ -73,7 +72,6 @@ export const addToCart = asyncHandler(async (req: AddToCartRequest, res: Respons
       })
     }
 
-    cart.totalPrice += product.price * quantity
     cart.totalQuantity += quantity
 
     await cart.save()
@@ -109,7 +107,6 @@ export const removeFromCart = asyncHandler(async (req: Request, res: Response, n
   }
 
   const cartItem = cart.cartItems[cartItemIndex]
-  cart.totalPrice -= product.price * cartItem.quantity
   cart.totalQuantity -= cartItem.quantity
   cart.cartItems.splice(cartItemIndex, 1)
 
@@ -117,6 +114,24 @@ export const removeFromCart = asyncHandler(async (req: Request, res: Response, n
 
   res.status(200).json({
     message: 'Remove from cart successfully',
+    cart
+  })
+})
+
+export const clearCart = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const cart = await Cart.findOne({ user: req.decoded?.userId })
+
+  if (!cart) {
+    throw new ApiError(404, 'Cart not found')
+  }
+
+  cart.cartItems = []
+  cart.totalQuantity = 0
+
+  await cart.save()
+
+  res.status(200).json({
+    message: 'Clear cart successfully',
     cart
   })
 })

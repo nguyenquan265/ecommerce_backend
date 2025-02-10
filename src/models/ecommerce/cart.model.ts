@@ -7,7 +7,6 @@ export interface ICart extends Document {
     product: Types.ObjectId
     quantity: number
   }[]
-  totalPrice: number
   totalQuantity: number
 }
 
@@ -31,10 +30,6 @@ const cartSchema = new Schema<ICart>(
         }
       }
     ],
-    totalPrice: {
-      type: Number,
-      required: true
-    },
     totalQuantity: {
       type: Number,
       required: true
