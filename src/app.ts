@@ -9,7 +9,7 @@ import ApiError from './utils/ApiError'
 
 const app = express()
 
-const allowedOrigins = [process.env.CLIENT_URL]
+const allowedOrigins = [process.env.CLIENT_URL, process.env.CLIENT_URL2]
 
 app.use(
   cors({
