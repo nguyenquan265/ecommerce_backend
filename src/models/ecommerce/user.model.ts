@@ -20,6 +20,10 @@ interface IUser extends Document {
   isGoogleAccount: boolean
   isActive: boolean
   isAdmin: boolean
+  resetPasswordToken?: string
+  resetPasswordExpiresAt?: Date
+  verificationToken?: string
+  verificationTokenExpiresAt?: Date
 }
 
 const userSchema = new Schema<IUser>(
@@ -80,7 +84,11 @@ const userSchema = new Schema<IUser>(
     isAdmin: {
       type: Boolean,
       default: false
-    }
+    },
+    resetPasswordToken: String,
+    resetPasswordExpiresAt: Date,
+    verificationToken: String,
+    verificationTokenExpiresAt: Date
   },
   {
     timestamps: true

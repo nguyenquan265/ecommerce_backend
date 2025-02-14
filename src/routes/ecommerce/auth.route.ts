@@ -3,10 +3,12 @@ import { Router } from 'express'
 import {
   addToWishlist,
   checkAuth,
+  forgotPassword,
   login,
   loginWithGoogle,
   refreshToken,
   removeFromWishlist,
+  resetPassword,
   signUp,
   updateMyPassword,
   updateMyProfile
@@ -20,6 +22,8 @@ router.post('/login', login)
 router.post('/google-login', loginWithGoogle)
 router.patch('/refresh-token', refreshToken)
 router.get('/check-auth', authenticate, checkAuth)
+router.post('/forgot-password', forgotPassword)
+router.post('/reset-password/:token', resetPassword)
 
 router.patch('/me/update-profile', authenticate, updateMyProfile)
 router.patch('/me/update-password', authenticate, updateMyPassword)

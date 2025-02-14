@@ -7,7 +7,9 @@ import Product from '~/models/ecommerce/product.model'
 
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
+import crypto from 'crypto'
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '~/utils/token'
+import { sendPasswordResetEmail, sendPasswordResetSuccessEmail } from '~/utils/email'
 
 export const signUp = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const { name, email, password } = req.body
@@ -144,7 +146,7 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response, nex
 export const checkAuth = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const currentUser = await User.findById(req.decoded?.userId).populate({
     path: 'wishlistItems',
-    select: '_id title price priceDiscount mainImage'
+    select: '_id title price priceDiscount mainImage quantity'
   })
 
   if (!currentUser) {
@@ -285,4 +287,59 @@ export const removeFromWishlist = asyncHandler(async (req: Request, res: Respons
     message: 'Product removed from wishlist',
     user: currentUser.toObject()
   })
+})
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const { email } = req.body
+
+  if (!email) {
+    throw new ApiError(400, 'Email is required')
+  }
+
+  const user = await User.findOne({ email })
+
+  if (!user) {
+    throw new ApiError(400, 'User not found')
+  }
+
+  const resetPasswordToken = crypto.randomBytes(20).toString('hex')
+  const resetPasswordExpiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000)
+
+  user.resetPasswordToken = resetPasswordToken
+  user.resetPasswordExpiresAt = resetPasswordExpiresAt
+
+  await Promise.all([
+    user.save(),
+    sendPasswordResetEmail(user.email as string, `${process.env.CLIENT_URL}/reset-password/${resetPasswordToken}`)
+  ])
+
+  res.status(200).json({ message: 'Password reset link sent to your email' })
+})
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const { token } = req.params
+  const { password, confirmPassword } = req.body
+
+  if (!password || !confirmPassword) {
+    throw new ApiError(400, 'Password and confirm password are required')
+  }
+
+  if (password !== confirmPassword) {
+    throw new ApiError(400, 'Passwords do not match')
+  }
+
+  const user = await User.findOne({ resetPasswordToken: token, resetPasswordExpiresAt: { $gt: new Date() } })
+
+  if (!user) {
+    throw new ApiError(400, 'Invalid or expired reset password token')
+  }
+
+  const salt = await genSalt(10)
+  user.password = await hash(password, salt)
+  user.resetPasswordToken = undefined
+  user.resetPasswordExpiresAt = undefined
+
+  await Promise.all([user.save(), sendPasswordResetSuccessEmail(user.email as string)])
+
+  res.status(200).json({ message: 'Password reset successfully' })
 })
