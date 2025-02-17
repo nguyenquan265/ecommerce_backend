@@ -83,6 +83,59 @@ export const addToCart = asyncHandler(async (req: AddToCartRequest, res: Respons
   })
 })
 
+interface UpdateCartItemRequest extends Request {
+  body: {
+    productId: string
+    newQuantity: number
+  }
+}
+
+export const updateCart = asyncHandler(async (req: UpdateCartItemRequest, res: Response, next: NextFunction) => {
+  const { productId, newQuantity } = req.body
+
+  const product = await Product.findById(productId)
+
+  if (!product) {
+    throw new ApiError(404, 'Product not found')
+  }
+
+  if (newQuantity < 0) {
+    throw new ApiError(400, 'Quantity cannot be negative')
+  }
+
+  if (newQuantity > product.quantity) {
+    throw new ApiError(400, 'Out of stock')
+  }
+
+  const cart = await Cart.findOne({ user: req.decoded?.userId })
+  if (!cart) {
+    throw new ApiError(404, 'Cart not found')
+  }
+
+  const cartItemIndex = cart.cartItems.findIndex(
+    (cartItem: { product: Types.ObjectId }) => cartItem.product.toString() === productId
+  )
+
+  if (cartItemIndex < 0) {
+    throw new ApiError(404, 'Product not in cart')
+  }
+
+  if (newQuantity === 0) {
+    cart.totalQuantity -= cart.cartItems[cartItemIndex].quantity
+    cart.cartItems.splice(cartItemIndex, 1)
+  } else {
+    cart.totalQuantity += newQuantity - cart.cartItems[cartItemIndex].quantity
+    cart.cartItems[cartItemIndex].quantity = newQuantity
+  }
+
+  await cart.save()
+
+  res.status(200).json({
+    message: 'Update cart item successfully',
+    cart
+  })
+})
+
 export const removeFromCart = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const { productId } = req.params
 
