@@ -176,7 +176,7 @@ export const createOrder = asyncHandler(async (req: CreateOrderRequest, res: Res
           : product.price
       })
     )
-    const totalPrice = orderItems.reduce((acc, item) => acc + item.price * item.amount, 0) + 3000
+    const totalPrice = orderItems.reduce((acc, item) => acc + item.price * item.amount, 0)
 
     // Lấy danh sách sản phẩm và kiểm tra tồn kho
     const productMap = new Map(
@@ -503,7 +503,7 @@ export const cancelOrder = asyncHandler(async (req: Request, res: Response, next
 
 // CRUD
 export const getMyOrders = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const orders = await Order.find({ user: req.decoded?.userId }).lean()
+  const orders = await Order.find({ user: req.decoded?.userId }).sort('-createdAt').lean()
 
   res.status(200).json({
     message: 'Get user orders successfully',
