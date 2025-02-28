@@ -43,7 +43,7 @@ const generateZaloOrder = (totalPrice: number, userId: string, cartId: string) =
     amount: totalPrice,
     description: `Thanh toán đơn hàng #${transID}`,
     bank_code: '',
-    callback_url: `https://chassis-wells-initiatives-amanda.trycloudflare.com/api/ecommerce/orders/zalo-callback?userId=${userId}&cartId=${cartId}`, // npx cloudflared tunnel --url http://localhost:8000
+    callback_url: `https://recipe-alone-broadway-tn.trycloudflare.com/api/ecommerce/orders/zalo-callback?userId=${userId}&cartId=${cartId}`, // npx cloudflared tunnel --url http://localhost:8000
     mac: ''
   }
 
@@ -60,7 +60,7 @@ const generateMomoOrder = (totalPrice: number, userId: string, cartId: string) =
   const orderInfo = 'pay with MoMo'
   const partnerCode = MomoConfig.partnerCode
   const redirectUrl = 'http://localhost:5173/account/orders'
-  const ipnUrl = `https://bite-partially-listings-boost.trycloudflare.com/api/ecommerce/orders/momo-callback?userId=${userId}&cartId=${cartId}` // npx cloudflared tunnel --url http://localhost:8000
+  const ipnUrl = `https://recipe-alone-broadway-tn.trycloudflare.com/api/ecommerce/orders/momo-callback?userId=${userId}&cartId=${cartId}` // npx cloudflared tunnel --url http://localhost:8000
   const requestType = 'payWithMethod'
   const amount = totalPrice
   const orderId = partnerCode + new Date().getTime()
@@ -351,6 +351,7 @@ export const zaloCallback = asyncHandler(async (req: Request, res: Response, nex
             ...user.shippingAddress
           },
           isPaid: true,
+          paidAt: new Date(),
           paymentMethod: 'ZALO',
           totalPrice: orderItems.reduce((acc, item) => acc + item.price * item.amount, 0)
         })
@@ -445,6 +446,7 @@ export const momoCallback = asyncHandler(async (req: Request, res: Response, nex
         ...user.shippingAddress
       },
       isPaid: true,
+      paidAt: new Date(),
       paymentMethod: 'MOMO',
       totalPrice: orderItems.reduce((acc, item) => acc + item.price * item.amount, 0)
     })
@@ -502,12 +504,33 @@ export const cancelOrder = asyncHandler(async (req: Request, res: Response, next
 })
 
 // CRUD
-export const getMyOrders = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const orders = await Order.find({ user: req.decoded?.userId }).sort('-createdAt').lean()
+interface GetOrdersRequest extends Request {
+  query: {
+    page: string
+    limit: string
+  }
+}
+
+export const getMyOrders = asyncHandler(async (req: GetOrdersRequest, res: Response, next: NextFunction) => {
+  const { page = '1', limit = '5' } = req.query
+  const skip = (parseInt(page) - 1) * parseInt(limit)
+
+  const [totalOrders, orders] = await Promise.all([
+    Order.countDocuments({ user: req.decoded?.userId }),
+    Order.find({ user: req.decoded?.userId }).skip(skip).limit(parseInt(limit)).sort('-createdAt').lean()
+  ])
+
+  const totalPages = Math.ceil(totalOrders / parseInt(limit)) || 1
 
   res.status(200).json({
     message: 'Get user orders successfully',
-    orders
+    orders,
+    pagination: {
+      totalOrders,
+      totalPages,
+      currentPage: parseInt(page),
+      limit: parseInt(limit)
+    }
   })
 })
 
