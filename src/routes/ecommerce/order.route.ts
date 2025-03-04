@@ -9,7 +9,9 @@ import {
   getMyOrders,
   momoCallback,
   sepayCallback,
-  zaloCallback
+  zaloCallback,
+  updateOrder,
+  deleteOrder
 } from '~/controllers/ecommerce/order.controller'
 
 const router = Router()
@@ -23,6 +25,8 @@ router.patch('/cancel-order/:orderId', authenticate, cancelOrder)
 router.get('/', authenticate, getMyOrders)
 router.post('/', authenticate, createOrder)
 router.get('/admin', authenticate, isAdmin, getAdminOrders)
-router.get('/:orderId', authenticate, getOrderById)
+router.get('/:orderId', authenticate, isAdmin, getOrderById)
+router.patch('/:orderId', authenticate, isAdmin, updateOrder)
+router.delete('/:orderId', authenticate, isAdmin, deleteOrder)
 
 export default router

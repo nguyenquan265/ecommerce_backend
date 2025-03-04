@@ -148,6 +148,7 @@ export const createOrder = asyncHandler(async (req: CreateOrderRequest, res: Res
     const { paymentMethod } = req.body
     const shippingAddress = {
       name: user.name,
+      email: user.email,
       phone: user.phoneNumber,
       ...user.shippingAddress
     }
@@ -347,6 +348,7 @@ export const zaloCallback = asyncHandler(async (req: Request, res: Response, nex
           orderItems,
           shippingAddress: {
             name: user.name,
+            email: user.email,
             phone: user.phoneNumber,
             ...user.shippingAddress
           },
@@ -442,6 +444,7 @@ export const momoCallback = asyncHandler(async (req: Request, res: Response, nex
       orderItems,
       shippingAddress: {
         name: user.name,
+        email: user.email,
         phone: user.phoneNumber,
         ...user.shippingAddress
       },
@@ -504,14 +507,14 @@ export const cancelOrder = asyncHandler(async (req: Request, res: Response, next
 })
 
 // CRUD
-interface GetOrdersRequest extends Request {
+interface GetMyOrdersRequest extends Request {
   query: {
     page: string
     limit: string
   }
 }
 
-export const getMyOrders = asyncHandler(async (req: GetOrdersRequest, res: Response, next: NextFunction) => {
+export const getMyOrders = asyncHandler(async (req: GetMyOrdersRequest, res: Response, next: NextFunction) => {
   const { page = '1', limit = '5' } = req.query
   const skip = (parseInt(page) - 1) * parseInt(limit)
 
@@ -534,12 +537,57 @@ export const getMyOrders = asyncHandler(async (req: GetOrdersRequest, res: Respo
   })
 })
 
-export const getAdminOrders = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const orders = await Order.find().lean()
+interface GetOrdersRequest extends Request {
+  query: {
+    page?: string
+    limit?: string
+    searchString?: string
+    sortBy?: 'asc' | 'desc' | 'a-z' | 'z-a'
+  }
+}
+
+export const getAdminOrders = asyncHandler(async (req: GetOrdersRequest, res: Response, next: NextFunction) => {
+  const { page = '1', limit = '10', searchString = '', sortBy = 'desc' } = req.query
+  const skip = (parseInt(page) - 1) * parseInt(limit)
+
+  let filter: any = {}
+  let sort: any = { createdAt: -1 }
+
+  if (searchString) {
+    const searchRegex = new RegExp(searchString, 'i')
+
+    filter = {
+      ...filter,
+      $or: [{ 'shippingAddress.name': searchRegex }, { 'shippingAddress.phone': searchRegex }]
+    }
+  }
+
+  if (sortBy === 'asc') {
+    sort = { createdAt: 1 }
+  } else if (sortBy === 'a-z') {
+    sort = { 'shippingAddress.name': 1 }
+  } else if (sortBy === 'z-a') {
+    sort = { 'shippingAddress.name': -1 }
+  } else {
+    sort = { createdAt: -1 }
+  }
+
+  const [totalOrders, orders] = await Promise.all([
+    Order.countDocuments(filter),
+    Order.find(filter).skip(skip).limit(parseInt(limit)).sort(sort).lean()
+  ])
+
+  const totalPages = Math.ceil(totalOrders / parseInt(limit)) || 1
 
   res.status(200).json({
     message: 'Get admin orders successfully',
-    orders
+    orders,
+    pagination: {
+      totalOrders,
+      totalPages,
+      currentPage: parseInt(page),
+      limit: parseInt(limit)
+    }
   })
 })
 
@@ -552,6 +600,67 @@ export const getOrderById = asyncHandler(async (req: Request, res: Response, nex
 
   res.status(200).json({
     message: 'Get order successfully',
+    order
+  })
+})
+
+export const updateOrder = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const {
+    name,
+    phone,
+    province,
+    provinceName,
+    district,
+    districtName,
+    ward,
+    wardName,
+    address,
+    paymentMethod,
+    isPaid,
+    isDelivered,
+    status
+  } = req.body
+
+  const order = await Order.findById(req.params.orderId)
+
+  if (!order) {
+    throw new ApiError(404, 'Order not found')
+  }
+
+  order.shippingAddress = {
+    name,
+    phone,
+    province,
+    provinceName,
+    district,
+    districtName,
+    ward,
+    wardName,
+    address
+  }
+
+  order.paymentMethod = paymentMethod
+  order.isPaid = isPaid
+  order.isDelivered = isDelivered
+  order.status = status
+
+  await order.save()
+
+  res.status(200).json({
+    message: 'Update order successfully',
+    order
+  })
+})
+
+export const deleteOrder = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const order = await Order.findByIdAndDelete(req.params.orderId)
+
+  if (!order) {
+    throw new ApiError(404, 'Order not found')
+  }
+
+  res.status(200).json({
+    message: 'Delete order successfully',
     order
   })
 })
