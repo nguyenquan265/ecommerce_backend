@@ -591,6 +591,25 @@ export const getAdminOrders = asyncHandler(async (req: GetOrdersRequest, res: Re
   })
 })
 
+export const getOrderOverview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const orders = await Order.find()
+
+  const totalOrders = orders.length
+  const totalRevenue = orders.reduce((acc, order) => acc + order.totalPrice, 0)
+  const totalReturned = orders.filter((order) => order.status === 'Cancelled').length
+  const onTheWay = orders.filter((order) => order.status === 'Delivering').length
+
+  res.status(200).json({
+    message: 'Get order overview successfully',
+    data: {
+      totalOrders,
+      totalRevenue,
+      totalReturned,
+      onTheWay
+    }
+  })
+})
+
 export const getOrderById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const order = await Order.findById(req.params.orderId).lean()
 
