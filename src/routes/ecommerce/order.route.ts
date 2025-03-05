@@ -12,7 +12,8 @@ import {
   zaloCallback,
   updateOrder,
   deleteOrder,
-  getOrderOverview
+  getOrderOverview,
+  getOrderShopOverview
 } from '~/controllers/ecommerce/order.controller'
 
 const router = Router()
@@ -27,6 +28,7 @@ router.get('/', authenticate, getMyOrders)
 router.post('/', authenticate, createOrder)
 router.get('/admin', authenticate, isAdmin, getAdminOrders)
 router.get('/overview', authenticate, isAdmin, getOrderOverview)
+router.get('/shopOverview', authenticate, isAdmin,getOrderShopOverview)
 router.get('/:orderId', authenticate, isAdmin, getOrderById)
 router.patch('/:orderId', authenticate, isAdmin, updateOrder)
 router.delete('/:orderId', authenticate, isAdmin, deleteOrder)

@@ -15,6 +15,7 @@ import User from '~/models/ecommerce/user.model'
 
 import ApiError from '~/utils/ApiError'
 import asyncHandler from '~/utils/asyncHandler'
+import Category from '~/models/ecommerce/category.model'
 
 type OrderItem = {
   product: string
@@ -126,6 +127,32 @@ const generateMomoOrder = (totalPrice: number, userId: string, cartId: string) =
   }
 
   return options
+}
+
+const getRevenueByMonth = async () => {
+  const revenue = await Order.aggregate([
+    {
+      $match: { isPaid: true } // Chỉ tính các đơn đã thanh toán
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' }
+        },
+        totalRevenue: { $sum: '$totalPrice' },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $sort: { '_id.year': 1, '_id.month': 1 }
+    }
+  ])
+
+  return revenue.map((item) => ({
+    month: `${item._id.year}-${item._id.month}`,
+    totalRevenue: item.totalRevenue
+  }))
 }
 
 export const createOrder = asyncHandler(async (req: CreateOrderRequest, res: Response, next: NextFunction) => {
@@ -592,20 +619,81 @@ export const getAdminOrders = asyncHandler(async (req: GetOrdersRequest, res: Re
 })
 
 export const getOrderOverview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const orders = await Order.find()
+  const orders = await Order.find({ createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } })
 
-  const totalOrders = orders.length
-  const totalRevenue = orders.reduce((acc, order) => acc + order.totalPrice, 0)
-  const totalReturned = orders.filter((order) => order.status === 'Cancelled').length
-  const onTheWay = orders.filter((order) => order.status === 'Delivering').length
+  const totalRevenue = orders.reduce((acc, order) => (order.isPaid ? acc + order.totalPrice : acc), 0)
+  const pendingOrders = orders.filter((order) => order.status === 'Pending').length
+  const processingOrders = orders.filter((order) => order.status === 'Processing').length
+  const onTheWayOrders = orders.filter((order) => order.status === 'Delivering').length
+  const deliveredOrders = orders.filter((order) => order.status === 'Delivered').length
+  const cancelledOrders = orders.filter((order) => order.status === 'Cancelled').length
 
   res.status(200).json({
     message: 'Get order overview successfully',
     data: {
-      totalOrders,
       totalRevenue,
-      totalReturned,
-      onTheWay
+      cancelledOrders,
+      onTheWayOrders,
+      processingOrders,
+      deliveredOrders,
+      pendingOrders
+    }
+  })
+})
+
+export const getOrderShopOverview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const products = await Product.find()
+  const orders = await Order.find()
+  const users = await User.find()
+  const totalCategories = await Category.countDocuments()
+  const orderChartData = await getRevenueByMonth()
+
+  const totalUsers = users.length
+  const totalEmailUsers = users.filter((user) => user.isGoogleAccount === false).length
+  const totalGoogleUsers = users.filter((user) => user.isGoogleAccount === true).length
+
+  const totalProducts = products.length
+  const totalProductInStock = products.reduce((acc, product) => acc + product.quantity, 0)
+  const totalDeletedProducts = products.filter((product) => product.isDeleted).length
+  const lowStockProducts = products.filter((product) => product.quantity <= 10)
+
+  const totalOrders = orders.length
+  const isPaidOrders = orders.filter((order) => order.isPaid).length
+  const deliveredOrders = orders.filter((order) => order.status === 'Delivered').length
+  const cancelledOrders = orders.filter((order) => order.status === 'Cancelled').length
+  const totalRevenue = orders.reduce((acc, order) => (order.isPaid ? acc + order.totalPrice : acc), 0)
+  const paymentMethodArr = [
+    { method: 'COD', count: 0 },
+    { method: 'ZALO', count: 0 },
+    { method: 'MOMO', count: 0 },
+    { method: 'SEPAY', count: 0 }
+  ]
+  orders.map((order) => {
+    paymentMethodArr.map((method) => {
+      if (order.paymentMethod === method.method) {
+        method.count++
+      }
+    })
+  })
+
+  res.status(200).json({
+    message: 'Get shop overview successfully',
+    data: {
+      totalProducts,
+      totalUsers,
+      totalOrders,
+      deliveredOrders,
+      cancelledOrders,
+      totalRevenue,
+      totalProductInStock,
+      totalCategories,
+      isPaidOrders,
+      lowStockProducts,
+      paymentMethodArr,
+      totalEmailUsers,
+      totalGoogleUsers,
+      totalDeletedProducts,
+      orderChartData
     }
   })
 })
