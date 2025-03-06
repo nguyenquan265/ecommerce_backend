@@ -117,13 +117,13 @@ export const createProduct = asyncHandler(async (req: Request, res: Response, ne
 
 // admin only
 export const updateProduct = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const { title, description, categoryId, size, price, priceDiscount, quantity, mainImage, subImages } = req.body
+  const { title, slug, description, categoryId, size, price, priceDiscount, quantity, mainImage, subImages } = req.body
 
   const product = await Product.findByIdAndUpdate(
     req.params.productId,
     {
       title,
-      slug: slugify(title),
+      slug: slug ? slug : slugify(title),
       description,
       category: categoryId,
       size,
