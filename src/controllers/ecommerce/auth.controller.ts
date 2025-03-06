@@ -31,7 +31,6 @@ export const signUp = asyncHandler(async (req: Request, res: Response, next: Nex
   await newUser.save()
   delete newUser._doc.password
   delete newUser._doc.isActive
-  delete newUser._doc.isAdmin
 
   const accessToken = await generateAccessToken({ userId: newUser._id, email: newUser.email })
   const refreshToken = await generateRefreshToken({ userId: newUser._id, email: newUser.email })
@@ -71,7 +70,6 @@ export const login = asyncHandler(async (req: Request, res: Response, next: Next
 
   delete user._doc.password
   delete user._doc.isActive
-  delete user._doc.isAdmin
 
   const accessToken = await generateAccessToken({ userId: user._id, email: user.email })
   const refreshToken = await generateRefreshToken({ userId: user._id, email: user.email })
@@ -99,7 +97,6 @@ export const loginWithGoogle = asyncHandler(async (req: Request, res: Response, 
 
     delete newUser._doc.password
     delete newUser._doc.isActive
-    delete newUser._doc.isAdmin
 
     const accessToken = await generateAccessToken({ userId: newUser._id, email: newUser.email })
     const refreshToken = await generateRefreshToken({ userId: newUser._id, email: newUser.email })
@@ -154,7 +151,6 @@ export const checkAuth = asyncHandler(async (req: Request, res: Response, next: 
   }
 
   delete currentUser._doc.isActive
-  delete currentUser._doc.isAdmin
 
   res.status(200).json({
     user: currentUser
