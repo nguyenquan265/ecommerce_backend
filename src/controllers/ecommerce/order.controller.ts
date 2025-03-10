@@ -44,7 +44,7 @@ const generateZaloOrder = (totalPrice: number, userId: string, cartId: string) =
     amount: totalPrice,
     description: `Thanh toán đơn hàng #${transID}`,
     bank_code: '',
-    callback_url: `https://recipe-alone-broadway-tn.trycloudflare.com/api/ecommerce/orders/zalo-callback?userId=${userId}&cartId=${cartId}`, // npx cloudflared tunnel --url http://localhost:8000
+    callback_url: `https://invalid-offers-phpbb-highland.trycloudflare.com/api/ecommerce/orders/zalo-callback?userId=${userId}&cartId=${cartId}`, // npx cloudflared tunnel --url http://localhost:8000
     mac: ''
   }
 
@@ -61,7 +61,7 @@ const generateMomoOrder = (totalPrice: number, userId: string, cartId: string) =
   const orderInfo = 'pay with MoMo'
   const partnerCode = MomoConfig.partnerCode
   const redirectUrl = 'http://localhost:5173/account/orders'
-  const ipnUrl = `https://recipe-alone-broadway-tn.trycloudflare.com/api/ecommerce/orders/momo-callback?userId=${userId}&cartId=${cartId}` // npx cloudflared tunnel --url http://localhost:8000
+  const ipnUrl = `https://invalid-offers-phpbb-highland.trycloudflare.com/api/ecommerce/orders/momo-callback?userId=${userId}&cartId=${cartId}` // npx cloudflared tunnel --url http://localhost:8000
   const requestType = 'payWithMethod'
   const amount = totalPrice
   const orderId = partnerCode + new Date().getTime()
@@ -529,6 +529,32 @@ export const cancelOrder = asyncHandler(async (req: Request, res: Response, next
 
   res.status(200).json({
     message: 'Cancel order successfully',
+    order
+  })
+})
+
+export const confirmOrder = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const user = await User.findById(req.decoded?.userId)
+
+  if (!user) {
+    throw new ApiError(404, 'User not found')
+  }
+
+  const order = await Order.findById(req.params.orderId)
+
+  if (!order) {
+    throw new ApiError(404, 'Order not found')
+  }
+
+  if (order.user.toString() !== req.decoded?.userId) {
+    throw new ApiError(403, 'You are not allowed to confirm this order')
+  }
+
+  order.status = 'Delivered'
+  await order.save()
+
+  res.status(200).json({
+    message: 'Confirm order successfully',
     order
   })
 })
