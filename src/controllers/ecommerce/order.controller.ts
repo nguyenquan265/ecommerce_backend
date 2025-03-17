@@ -44,7 +44,7 @@ const generateZaloOrder = (totalPrice: number, userId: string, cartId: string) =
     amount: totalPrice,
     description: `Thanh toán đơn hàng #${transID}`,
     bank_code: '',
-    callback_url: `https://appear-get-convenience-collectibles.trycloudflare.com/api/ecommerce/orders/zalo-callback?userId=${userId}&cartId=${cartId}`, // npx cloudflared tunnel --url http://localhost:8000
+    callback_url: `ecommercetrello-production.up.railway.app/api/ecommerce/orders/zalo-callback?userId=${userId}&cartId=${cartId}`, // npx cloudflared tunnel --url http://localhost:8000
     mac: ''
   }
 
@@ -61,7 +61,7 @@ const generateMomoOrder = (totalPrice: number, userId: string, cartId: string) =
   const orderInfo = 'pay with MoMo'
   const partnerCode = MomoConfig.partnerCode
   const redirectUrl = 'http://localhost:5173/account/orders'
-  const ipnUrl = `https://appear-get-convenience-collectibles.trycloudflare.com/api/ecommerce/orders/momo-callback?userId=${userId}&cartId=${cartId}` // npx cloudflared tunnel --url http://localhost:8000
+  const ipnUrl = `ecommercetrello-production.up.railway.app/api/ecommerce/orders/momo-callback?userId=${userId}&cartId=${cartId}` // npx cloudflared tunnel --url http://localhost:8000
   const requestType = 'payWithMethod'
   const amount = totalPrice
   const orderId = partnerCode + new Date().getTime()
