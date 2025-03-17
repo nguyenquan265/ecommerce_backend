@@ -1,7 +1,7 @@
 import { Router } from 'express'
 
-import { createUser, deleteUser, getAllUsers, getUser, updateUser } from '~/controllers/ecommerce/user.controller'
-import { authenticate, isAdmin } from '~/middlewares/ecommerce/auth.middleware'
+import { createUser, deleteUser, getAllUsers, getUser, updateUser } from '../../controllers/ecommerce/user.controller'
+import { authenticate, isAdmin } from '../../middlewares/ecommerce/auth.middleware'
 
 const router = Router()
 

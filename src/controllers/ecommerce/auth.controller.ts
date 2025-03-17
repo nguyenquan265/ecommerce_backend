@@ -1,15 +1,15 @@
 import { compare, genSalt, hash } from 'bcryptjs'
 import { NextFunction, Request, Response } from 'express'
 import { ObjectId } from 'mongoose'
-
-import User from '~/models/ecommerce/user.model'
-import Product from '~/models/ecommerce/product.model'
-
-import ApiError from '~/utils/ApiError'
-import asyncHandler from '~/utils/asyncHandler'
 import crypto from 'crypto'
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '~/utils/token'
-import { sendPasswordResetEmail, sendPasswordResetSuccessEmail } from '~/utils/email'
+
+import User from '../../models/ecommerce/user.model'
+import Product from '../../models/ecommerce/product.model'
+
+import ApiError from '../../utils/ApiError'
+import asyncHandler from '../../utils/asyncHandler'
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../../utils/token'
+import { sendPasswordResetEmail, sendPasswordResetSuccessEmail } from '../../utils/email'
 
 export const signUp = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const { name, email, password } = req.body

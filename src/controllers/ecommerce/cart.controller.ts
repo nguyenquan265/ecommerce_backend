@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response } from 'express'
 import { Types } from 'mongoose'
 
-import Cart from '~/models/ecommerce/cart.model'
-import Product from '~/models/ecommerce/product.model'
-import User from '~/models/ecommerce/user.model'
+import Cart from '../../models/ecommerce/cart.model'
+import Product from '../../models/ecommerce/product.model'
+import User from '../../models/ecommerce/user.model'
 
-import ApiError from '~/utils/ApiError'
-import asyncHandler from '~/utils/asyncHandler'
+import ApiError from '../../utils/ApiError'
+import asyncHandler from '../../utils/asyncHandler'
 
 export const getCart = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const cart = await Cart.findOne({ user: req.decoded?.userId }).populate('cartItems.product').lean()

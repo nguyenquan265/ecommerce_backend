@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from 'express'
 import { genSalt, hash } from 'bcryptjs'
 
-import User from '~/models/ecommerce/user.model'
+import User from '../../models/ecommerce/user.model'
 
-import ApiError from '~/utils/ApiError'
-import asyncHandler from '~/utils/asyncHandler'
+import ApiError from '../../utils/ApiError'
+import asyncHandler from '../../utils/asyncHandler'
 
 interface GetUsersRequest extends Request {
   query: {

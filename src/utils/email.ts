@@ -1,4 +1,4 @@
-import { mailtrapClient, sender } from '~/config/ecommerce/mailtrap'
+import { mailtrapClient, sender } from '../config/ecommerce/mailtrap'
 import ApiError from './ApiError'
 
 const VERIFICATION_EMAIL_TEMPLATE = `

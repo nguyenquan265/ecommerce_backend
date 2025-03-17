@@ -1,6 +1,6 @@
 import { Router } from 'express'
 
-import { authenticate, isAdmin } from '~/middlewares/ecommerce/auth.middleware'
+import { authenticate, isAdmin } from '../../middlewares/ecommerce/auth.middleware'
 import {
   cancelOrder,
   createOrder,
@@ -15,7 +15,7 @@ import {
   getOrderOverview,
   getOrderShopOverview,
   confirmOrder
-} from '~/controllers/ecommerce/order.controller'
+} from '../../controllers/ecommerce/order.controller'
 
 const router = Router()
 

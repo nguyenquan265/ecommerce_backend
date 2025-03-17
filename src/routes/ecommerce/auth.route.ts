@@ -12,8 +12,8 @@ import {
   signUp,
   updateMyPassword,
   updateMyProfile
-} from '~/controllers/ecommerce/auth.controller'
-import { authenticate } from '~/middlewares/ecommerce/auth.middleware'
+} from '../../controllers/ecommerce/auth.controller'
+import { authenticate } from '../../middlewares/ecommerce/auth.middleware'
 
 const router = Router()
 

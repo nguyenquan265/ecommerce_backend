@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response } from 'express'
 
-import Category from '~/models/ecommerce/category.model'
-import Product from '~/models/ecommerce/product.model'
-import User from '~/models/ecommerce/user.model'
+import Category from '../../models/ecommerce/category.model'
+import Product from '../../models/ecommerce/product.model'
+import User from '../../models/ecommerce/user.model'
 
-import ApiError from '~/utils/ApiError'
-import asyncHandler from '~/utils/asyncHandler'
-import slugify from '~/utils/slugify'
+import ApiError from '../../utils/ApiError'
+import asyncHandler from '../../utils/asyncHandler'
+import slugify from '../../utils/slugify'
 
 interface GetProductsRequest extends Request {
   query: {

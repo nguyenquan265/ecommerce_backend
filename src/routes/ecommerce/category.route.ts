@@ -1,13 +1,13 @@
 import { Router } from 'express'
 
-import { authenticate, isAdmin } from '~/middlewares/ecommerce/auth.middleware'
+import { authenticate, isAdmin } from '../../middlewares/ecommerce/auth.middleware'
 import {
   createCategory,
   deleteCategory,
   getAllCategories,
   getCategory,
   updateCategory
-} from '~/controllers/ecommerce/category.controller'
+} from '../../controllers/ecommerce/category.controller'
 
 const router = Router()
 

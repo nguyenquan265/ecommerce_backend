@@ -5,17 +5,17 @@ import CryptoJS from 'crypto-js'
 import moment from 'moment'
 import crypto from 'crypto'
 
-import ZaloConfig from '~/config/ecommerce/zalo'
-import MomoConfig from '~/config/ecommerce/momo'
+import ZaloConfig from '../../config/ecommerce/zalo'
+import MomoConfig from '../../config/ecommerce/momo'
 
-import Order from '~/models/ecommerce/order.model'
-import Cart from '~/models/ecommerce/cart.model'
-import Product from '~/models/ecommerce/product.model'
-import User from '~/models/ecommerce/user.model'
+import Order from '../../models/ecommerce/order.model'
+import Cart from '../../models/ecommerce/cart.model'
+import Product from '../../models/ecommerce/product.model'
+import User from '../../models/ecommerce/user.model'
 
-import ApiError from '~/utils/ApiError'
-import asyncHandler from '~/utils/asyncHandler'
-import Category from '~/models/ecommerce/category.model'
+import ApiError from '../../utils/ApiError'
+import asyncHandler from '../../utils/asyncHandler'
+import Category from '../../models/ecommerce/category.model'
 
 type OrderItem = {
   product: string

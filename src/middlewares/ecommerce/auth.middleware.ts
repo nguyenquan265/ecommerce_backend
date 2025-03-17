@@ -1,8 +1,8 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express'
 
-import User from '~/models/ecommerce/user.model'
+import User from '../../models/ecommerce/user.model'
 
-import { verifyAccessToken } from '~/utils/token'
+import { verifyAccessToken } from '../../utils/token'
 
 export const authenticate: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   const headers = req.headers.authorization
