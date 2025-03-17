@@ -36,7 +36,7 @@ export const getAllProducts = asyncHandler(async (req: GetProductsRequest, res: 
     }
   }
 
-  if (categorySlug !== 'all') {
+  if (categorySlug && categorySlug !== 'all') {
     const category = await Category.findOne({ slug: categorySlug })
 
     if (category) {

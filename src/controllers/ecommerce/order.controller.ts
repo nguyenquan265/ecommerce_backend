@@ -44,7 +44,7 @@ const generateZaloOrder = (totalPrice: number, userId: string, cartId: string) =
     amount: totalPrice,
     description: `Thanh toán đơn hàng #${transID}`,
     bank_code: '',
-    callback_url: `https://invalid-offers-phpbb-highland.trycloudflare.com/api/ecommerce/orders/zalo-callback?userId=${userId}&cartId=${cartId}`, // npx cloudflared tunnel --url http://localhost:8000
+    callback_url: `https://appear-get-convenience-collectibles.trycloudflare.com/api/ecommerce/orders/zalo-callback?userId=${userId}&cartId=${cartId}`, // npx cloudflared tunnel --url http://localhost:8000
     mac: ''
   }
 
@@ -61,7 +61,7 @@ const generateMomoOrder = (totalPrice: number, userId: string, cartId: string) =
   const orderInfo = 'pay with MoMo'
   const partnerCode = MomoConfig.partnerCode
   const redirectUrl = 'http://localhost:5173/account/orders'
-  const ipnUrl = `https://invalid-offers-phpbb-highland.trycloudflare.com/api/ecommerce/orders/momo-callback?userId=${userId}&cartId=${cartId}` // npx cloudflared tunnel --url http://localhost:8000
+  const ipnUrl = `https://appear-get-convenience-collectibles.trycloudflare.com/api/ecommerce/orders/momo-callback?userId=${userId}&cartId=${cartId}` // npx cloudflared tunnel --url http://localhost:8000
   const requestType = 'payWithMethod'
   const amount = totalPrice
   const orderId = partnerCode + new Date().getTime()
@@ -595,12 +595,13 @@ interface GetOrdersRequest extends Request {
     page?: string
     limit?: string
     searchString?: string
+    paymentMethod?: string
     sortBy?: 'asc' | 'desc' | 'a-z' | 'z-a'
   }
 }
 
 export const getAdminOrders = asyncHandler(async (req: GetOrdersRequest, res: Response, next: NextFunction) => {
-  const { page = '1', limit = '10', searchString = '', sortBy = 'desc' } = req.query
+  const { page = '1', limit = '10', searchString = '', sortBy = 'desc', paymentMethod } = req.query
   const skip = (parseInt(page) - 1) * parseInt(limit)
 
   let filter: any = {}
@@ -612,6 +613,13 @@ export const getAdminOrders = asyncHandler(async (req: GetOrdersRequest, res: Re
     filter = {
       ...filter,
       $or: [{ 'shippingAddress.name': searchRegex }, { 'shippingAddress.phone': searchRegex }]
+    }
+  }
+
+  if (paymentMethod && paymentMethod !== 'all') {
+    filter = {
+      ...filter,
+      paymentMethod
     }
   }
 
@@ -644,28 +652,63 @@ export const getAdminOrders = asyncHandler(async (req: GetOrdersRequest, res: Re
   })
 })
 
-export const getOrderOverview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const orders = await Order.find({ createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } })
+interface GetOrderOverviewRequest extends Request {
+  query: {
+    orderTimeOption: 'today' | 'yesterday' | 'thisWeek' | 'thisMonth' | 'thisYear'
+  }
+}
 
-  const totalRevenue = orders.reduce((acc, order) => (order.isPaid ? acc + order.totalPrice : acc), 0)
-  const pendingOrders = orders.filter((order) => order.status === 'Pending').length
-  const processingOrders = orders.filter((order) => order.status === 'Processing').length
-  const onTheWayOrders = orders.filter((order) => order.status === 'Delivering').length
-  const deliveredOrders = orders.filter((order) => order.status === 'Delivered').length
-  const cancelledOrders = orders.filter((order) => order.status === 'Cancelled').length
+export const getOrderOverview = asyncHandler(
+  async (req: GetOrderOverviewRequest, res: Response, next: NextFunction) => {
+    const { orderTimeOption } = req.query
 
-  res.status(200).json({
-    message: 'Get order overview successfully',
-    data: {
-      totalRevenue,
-      cancelledOrders,
-      onTheWayOrders,
-      processingOrders,
-      deliveredOrders,
-      pendingOrders
+    let startDate = new Date()
+    let endDate = new Date()
+
+    if (orderTimeOption === 'today') {
+      startDate = moment().startOf('day').toDate()
+      endDate = moment().endOf('day').toDate()
+    } else if (orderTimeOption === 'yesterday') {
+      startDate = moment().subtract(1, 'day').startOf('day').toDate()
+      endDate = moment().subtract(1, 'day').endOf('day').toDate()
+    } else if (orderTimeOption === 'thisWeek') {
+      startDate = moment().startOf('week').toDate()
+      endDate = moment().endOf('week').toDate()
+    } else if (orderTimeOption === 'thisMonth') {
+      startDate = moment().startOf('month').toDate()
+      endDate = moment().endOf('month').toDate()
+    } else if (orderTimeOption === 'thisYear') {
+      startDate = moment().startOf('year').toDate()
+      endDate = moment().endOf('year').toDate()
     }
-  })
-})
+
+    const orders = await Order.find({
+      createdAt: {
+        $gte: startDate,
+        $lte: endDate
+      }
+    })
+
+    const totalRevenue = orders.reduce((acc, order) => (order.isPaid ? acc + order.totalPrice : acc), 0)
+    const pendingOrders = orders.filter((order) => order.status === 'Pending').length
+    const processingOrders = orders.filter((order) => order.status === 'Processing').length
+    const onTheWayOrders = orders.filter((order) => order.status === 'Delivering').length
+    const deliveredOrders = orders.filter((order) => order.status === 'Delivered').length
+    const cancelledOrders = orders.filter((order) => order.status === 'Cancelled').length
+
+    res.status(200).json({
+      message: 'Get order overview successfully',
+      data: {
+        totalRevenue,
+        cancelledOrders,
+        onTheWayOrders,
+        processingOrders,
+        deliveredOrders,
+        pendingOrders
+      }
+    })
+  }
+)
 
 export const getOrderShopOverview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const products = await Product.find()
