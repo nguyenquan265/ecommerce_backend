@@ -3,19 +3,19 @@ import mongoose from 'mongoose'
 import axios from 'axios'
 import CryptoJS from 'crypto-js'
 import moment from 'moment'
-import crypto from 'crypto'
 
 import ZaloConfig from '../../config/ecommerce/zalo'
-import MomoConfig from '../../config/ecommerce/momo'
 
 import Order from '../../models/ecommerce/order.model'
 import Cart from '../../models/ecommerce/cart.model'
 import Product from '../../models/ecommerce/product.model'
 import User from '../../models/ecommerce/user.model'
+import Category from '../../models/ecommerce/category.model'
 
 import ApiError from '../../utils/ApiError'
 import asyncHandler from '../../utils/asyncHandler'
-import Category from '../../models/ecommerce/category.model'
+import calculatePrice from '../../utils/calculatePrice'
+import { generateMomoOrder, generateZaloOrder } from '../../utils/generateOrder'
 
 type OrderItem = {
   product: string
@@ -30,103 +30,6 @@ interface CreateOrderRequest extends Request {
   body: {
     paymentMethod: string
   }
-}
-
-const generateZaloOrder = (totalPrice: number, userId: string, cartId: string) => {
-  const transID = Math.floor(Math.random() * 1000000)
-  const zaloOrder = {
-    app_id: ZaloConfig.app_id,
-    app_trans_id: `${moment().format('YYMMDD')}_${transID}`,
-    app_user: 'user123',
-    app_time: Date.now(),
-    item: JSON.stringify([{}]),
-    embed_data: JSON.stringify({ redirecturl: `${process.env.CLIENT_URL}/account/orders` }),
-    amount: totalPrice,
-    description: `Thanh toán đơn hàng #${transID}`,
-    bank_code: '',
-    callback_url: `${process.env.SERVER_URL}/api/ecommerce/orders/zalo-callback?userId=${userId}&cartId=${cartId}`, // npx cloudflared tunnel --url http://localhost:8000
-    mac: ''
-  }
-
-  const data = `${ZaloConfig.app_id}|${zaloOrder.app_trans_id}|${zaloOrder.app_user}|${zaloOrder.amount}|${zaloOrder.app_time}|${zaloOrder.embed_data}|${zaloOrder.item}`
-  zaloOrder.mac = CryptoJS.HmacSHA256(data, ZaloConfig.key1).toString()
-
-  return zaloOrder
-}
-
-const generateMomoOrder = (totalPrice: number, userId: string, cartId: string) => {
-  //parameters
-  const accessKey = MomoConfig.accessKey
-  const secretKey = MomoConfig.secretKey
-  const orderInfo = 'pay with MoMo'
-  const partnerCode = MomoConfig.partnerCode
-  const redirectUrl = `${process.env.CLIENT_URL}/account/orders`
-  const ipnUrl = `${process.env.SERVER_URL}/api/ecommerce/orders/momo-callback?userId=${userId}&cartId=${cartId}` // npx cloudflared tunnel --url http://localhost:8000
-  const requestType = 'payWithMethod'
-  const amount = totalPrice
-  const orderId = partnerCode + new Date().getTime()
-  const requestId = orderId
-  const extraData = ''
-  const orderGroupId = ''
-  const autoCapture = true
-  const lang = 'vi'
-
-  //before sign HMAC SHA256 with format
-  const rawSignature =
-    'accessKey=' +
-    accessKey +
-    '&amount=' +
-    amount +
-    '&extraData=' +
-    extraData +
-    '&ipnUrl=' +
-    ipnUrl +
-    '&orderId=' +
-    orderId +
-    '&orderInfo=' +
-    orderInfo +
-    '&partnerCode=' +
-    partnerCode +
-    '&redirectUrl=' +
-    redirectUrl +
-    '&requestId=' +
-    requestId +
-    '&requestType=' +
-    requestType
-  //signature
-  const signature = crypto.createHmac('sha256', secretKey).update(rawSignature).digest('hex')
-
-  //json object send to MoMo endpoint
-  const requestBody = JSON.stringify({
-    partnerCode: partnerCode,
-    partnerName: 'Test',
-    storeId: 'MomoTestStore',
-    requestId: requestId,
-    amount: amount,
-    orderId: orderId,
-    orderInfo: orderInfo,
-    redirectUrl: redirectUrl,
-    ipnUrl: ipnUrl,
-    lang: lang,
-    requestType: requestType,
-    autoCapture: autoCapture,
-    extraData: extraData,
-    orderGroupId: orderGroupId,
-    signature: signature
-  })
-
-  // options for axios
-  const options = {
-    method: 'POST',
-    url: 'https://test-payment.momo.vn/v2/gateway/api/create',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(requestBody)
-    },
-    data: requestBody
-  }
-
-  return options
 }
 
 const getRevenueByMonth = async () => {
@@ -199,9 +102,7 @@ export const createOrder = asyncHandler(async (req: CreateOrderRequest, res: Res
         size: product.size,
         amount: quantity,
         image: product.mainImage,
-        price: product.priceDiscount
-          ? Math.round(product.price - (product.price * product.priceDiscount) / 100)
-          : product.price
+        price: product.priceDiscount ? calculatePrice(product.price, product.priceDiscount) : product.price
       })
     )
     const totalPrice = orderItems.reduce((acc, item) => acc + item.price * item.amount, 0)
@@ -232,7 +133,12 @@ export const createOrder = asyncHandler(async (req: CreateOrderRequest, res: Res
       const bulkOperations = orderItems.map((item) => ({
         updateOne: {
           filter: { _id: item.product },
-          update: { $inc: { quantity: -item.amount } }
+          update: {
+            $inc: {
+              quantity: -item.amount,
+              sold: item.amount
+            }
+          }
         }
       }))
 
@@ -354,16 +260,19 @@ export const zaloCallback = asyncHandler(async (req: Request, res: Response, nex
             size: product.size,
             amount: quantity,
             image: product.mainImage,
-            price: product.priceDiscount
-              ? Math.round(product.price - (product.price * product.priceDiscount) / 100)
-              : product.price
+            price: product.priceDiscount ? calculatePrice(product.price, product.priceDiscount) : product.price
           })
         )
 
         const bulkOperations = orderItems.map((item) => ({
           updateOne: {
             filter: { _id: item.product },
-            update: { $inc: { quantity: -item.amount } }
+            update: {
+              $inc: {
+                quantity: -item.amount,
+                sold: item.amount
+              }
+            }
           }
         }))
 
@@ -450,16 +359,14 @@ export const momoCallback = asyncHandler(async (req: Request, res: Response, nex
         size: product.size,
         amount: quantity,
         image: product.mainImage,
-        price: product.priceDiscount
-          ? Math.round(product.price - (product.price * product.priceDiscount) / 100)
-          : product.price
+        price: product.priceDiscount ? calculatePrice(product.price, product.priceDiscount) : product.price
       })
     )
 
     const bulkOperations = orderItems.map((item) => ({
       updateOne: {
         filter: { _id: item.product },
-        update: { $inc: { quantity: -item.amount } }
+        update: { $inc: { quantity: -item.amount, sold: item.amount } }
       }
     }))
 
@@ -504,37 +411,65 @@ export const momoCallback = asyncHandler(async (req: Request, res: Response, nex
 export const sepayCallback = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {})
 
 export const cancelOrder = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const user = await User.findById(req.decoded?.userId)
+  const session = await mongoose.startSession()
+  session.startTransaction()
 
-  if (!user) {
-    throw new ApiError(404, 'User not found')
+  try {
+    const user = await User.findById(req.decoded?.userId).lean().session(session)
+
+    if (!user) {
+      throw new ApiError(404, 'User not found')
+    }
+
+    const order = await Order.findById(req.params.orderId).session(session)
+    if (!order) {
+      throw new ApiError(404, 'Order not found')
+    }
+
+    if (order.user.toString() !== req.decoded?.userId) {
+      throw new ApiError(403, 'You are not allowed to cancel this order')
+    }
+
+    if (order.isPaid) {
+      throw new ApiError(400, 'Order is already paid')
+    }
+
+    // Cập nhật trạng thái đơn hàng
+    order.status = 'Cancelled'
+    await order.save({ session })
+
+    // Cập nhật lại số lượng sản phẩm
+    const bulkOperations = order.orderItems.map((item: any) => ({
+      updateOne: {
+        filter: { _id: item.product },
+        update: {
+          $inc: {
+            quantity: item.amount, // Trả lại số lượng
+            sold: -item.amount // Giảm số lượng đã bán
+          }
+        }
+      }
+    }))
+
+    await Product.bulkWrite(bulkOperations, { session })
+
+    await session.commitTransaction()
+
+    res.status(200).json({
+      message: 'Cancel order successfully',
+      order
+    })
+  } catch (error) {
+    console.error(error)
+    await session.abortTransaction()
+    next(error)
+  } finally {
+    session.endSession()
   }
-
-  const order = await Order.findById(req.params.orderId)
-
-  if (!order) {
-    throw new ApiError(404, 'Order not found')
-  }
-
-  if (order.user.toString() !== req.decoded?.userId) {
-    throw new ApiError(403, 'You are not allowed to cancel this order')
-  }
-
-  if (order.isPaid) {
-    throw new ApiError(400, 'Order is already paid')
-  }
-
-  order.status = 'Cancelled'
-  await order.save()
-
-  res.status(200).json({
-    message: 'Cancel order successfully',
-    order
-  })
 })
 
 export const confirmOrder = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const user = await User.findById(req.decoded?.userId)
+  const user = await User.findById(req.decoded?.userId).lean()
 
   if (!user) {
     throw new ApiError(404, 'User not found')
@@ -560,6 +495,12 @@ export const confirmOrder = asyncHandler(async (req: Request, res: Response, nex
 })
 
 // CRUD
+const fetchOrders = async (filter: any, sort: any, page: number, limit: number) => {
+  const skip = (page - 1) * limit
+
+  return Promise.all([Order.countDocuments(filter), Order.find(filter).skip(skip).limit(limit).sort(sort).lean()])
+}
+
 interface GetMyOrdersRequest extends Request {
   query: {
     page: string
@@ -568,24 +509,21 @@ interface GetMyOrdersRequest extends Request {
 }
 
 export const getMyOrders = asyncHandler(async (req: GetMyOrdersRequest, res: Response, next: NextFunction) => {
-  const { page = '1', limit = '5' } = req.query
-  const skip = (parseInt(page) - 1) * parseInt(limit)
+  const page = Math.max(Number(req.query.page) || 1, 1)
+  const limit = Math.max(Number(req.query.limit) || 5, 1)
+  const filter = { user: req.decoded?.userId }
+  const sort = { createdAt: -1 }
 
-  const [totalOrders, orders] = await Promise.all([
-    Order.countDocuments({ user: req.decoded?.userId }),
-    Order.find({ user: req.decoded?.userId }).skip(skip).limit(parseInt(limit)).sort('-createdAt').lean()
-  ])
-
-  const totalPages = Math.ceil(totalOrders / parseInt(limit)) || 1
+  const [totalOrders, orders] = await fetchOrders(filter, sort, page, limit)
 
   res.status(200).json({
     message: 'Get user orders successfully',
     orders,
     pagination: {
       totalOrders,
-      totalPages,
-      currentPage: parseInt(page),
-      limit: parseInt(limit)
+      totalPages: Math.ceil(totalOrders / limit) || 1,
+      currentPage: page,
+      limit
     }
   })
 })
@@ -601,14 +539,14 @@ interface GetOrdersRequest extends Request {
 }
 
 export const getAdminOrders = asyncHandler(async (req: GetOrdersRequest, res: Response, next: NextFunction) => {
-  const { page = '1', limit = '10', searchString = '', sortBy = 'desc', paymentMethod } = req.query
-  const skip = (parseInt(page) - 1) * parseInt(limit)
+  const page = Math.max(Number(req.query.page) || 1, 1)
+  const limit = Math.max(Number(req.query.limit) || 10, 1)
 
   let filter: any = {}
   let sort: any = { createdAt: -1 }
 
-  if (searchString) {
-    const searchRegex = new RegExp(searchString, 'i')
+  if (req.query.searchString) {
+    const searchRegex = new RegExp(req.query.searchString, 'i')
 
     filter = {
       ...filter,
@@ -616,38 +554,35 @@ export const getAdminOrders = asyncHandler(async (req: GetOrdersRequest, res: Re
     }
   }
 
-  if (paymentMethod && paymentMethod !== 'all') {
+  if (req.query.paymentMethod && req.query.paymentMethod !== 'all') {
     filter = {
       ...filter,
-      paymentMethod
+      paymentMethod: req.query.paymentMethod
     }
   }
 
-  if (sortBy === 'asc') {
-    sort = { createdAt: 1 }
-  } else if (sortBy === 'a-z') {
-    sort = { 'shippingAddress.name': 1 }
-  } else if (sortBy === 'z-a') {
-    sort = { 'shippingAddress.name': -1 }
-  } else {
-    sort = { createdAt: -1 }
+  switch (req.query.sortBy) {
+    case 'asc':
+      sort = { createdAt: 1 }
+      break
+    case 'a-z':
+      sort = { 'shippingAddress.name': 1 }
+      break
+    case 'z-a':
+      sort = { 'shippingAddress.name': -1 }
+      break
   }
 
-  const [totalOrders, orders] = await Promise.all([
-    Order.countDocuments(filter),
-    Order.find(filter).skip(skip).limit(parseInt(limit)).sort(sort).lean()
-  ])
-
-  const totalPages = Math.ceil(totalOrders / parseInt(limit)) || 1
+  const [totalOrders, orders] = await fetchOrders(filter, sort, page, limit)
 
   res.status(200).json({
     message: 'Get admin orders successfully',
     orders,
     pagination: {
       totalOrders,
-      totalPages,
-      currentPage: parseInt(page),
-      limit: parseInt(limit)
+      totalPages: Math.ceil(totalOrders / limit) || 1,
+      currentPage: page,
+      limit
     }
   })
 })
@@ -658,64 +593,55 @@ interface GetOrderOverviewRequest extends Request {
   }
 }
 
-export const getOrderOverview = asyncHandler(
-  async (req: GetOrderOverviewRequest, res: Response, next: NextFunction) => {
-    const { orderTimeOption } = req.query
+export const getOrderOverview = asyncHandler(async (req: GetOrderOverviewRequest, res: Response) => {
+  const { orderTimeOption } = req.query
 
-    let startDate = new Date()
-    let endDate = new Date()
-
-    if (orderTimeOption === 'today') {
-      startDate = moment().startOf('day').toDate()
-      endDate = moment().endOf('day').toDate()
-    } else if (orderTimeOption === 'yesterday') {
-      startDate = moment().subtract(1, 'day').startOf('day').toDate()
-      endDate = moment().subtract(1, 'day').endOf('day').toDate()
-    } else if (orderTimeOption === 'thisWeek') {
-      startDate = moment().startOf('week').toDate()
-      endDate = moment().endOf('week').toDate()
-    } else if (orderTimeOption === 'thisMonth') {
-      startDate = moment().startOf('month').toDate()
-      endDate = moment().endOf('month').toDate()
-    } else if (orderTimeOption === 'thisYear') {
-      startDate = moment().startOf('year').toDate()
-      endDate = moment().endOf('year').toDate()
-    }
-
-    const orders = await Order.find({
-      createdAt: {
-        $gte: startDate,
-        $lte: endDate
-      }
-    })
-
-    const totalRevenue = orders.reduce((acc, order) => (order.isPaid ? acc + order.totalPrice : acc), 0)
-    const pendingOrders = orders.filter((order) => order.status === 'Pending').length
-    const processingOrders = orders.filter((order) => order.status === 'Processing').length
-    const onTheWayOrders = orders.filter((order) => order.status === 'Delivering').length
-    const deliveredOrders = orders.filter((order) => order.status === 'Delivered').length
-    const cancelledOrders = orders.filter((order) => order.status === 'Cancelled').length
-
-    res.status(200).json({
-      message: 'Get order overview successfully',
-      data: {
-        totalRevenue,
-        cancelledOrders,
-        onTheWayOrders,
-        processingOrders,
-        deliveredOrders,
-        pendingOrders
-      }
-    })
+  const timeRange = {
+    today: [moment().startOf('day'), moment().endOf('day')],
+    yesterday: [moment().subtract(1, 'day').startOf('day'), moment().subtract(1, 'day').endOf('day')],
+    thisWeek: [moment().startOf('week'), moment().endOf('week')],
+    thisMonth: [moment().startOf('month'), moment().endOf('month')],
+    thisYear: [moment().startOf('year'), moment().endOf('year')]
   }
-)
+
+  const [startDate, endDate] = timeRange[orderTimeOption] || [moment().startOf('day'), moment().endOf('day')]
+
+  // Truy vấn đơn hàng theo khoảng thời gian
+  const orders = await Order.find({
+    createdAt: { $gte: startDate.toDate(), $lte: endDate.toDate() }
+  })
+
+  // Tính toán tổng hợp chỉ duyệt 1 lần
+  const overview = orders.reduce(
+    (acc, order) => {
+      acc.totalRevenue += order.isPaid ? order.totalPrice : 0
+      acc[order.status] = (acc[order.status] || 0) + 1
+      return acc
+    },
+    { totalRevenue: 0, Pending: 0, Processing: 0, Delivering: 0, Delivered: 0, Cancelled: 0 }
+  )
+
+  res.status(200).json({
+    message: 'Get order overview successfully',
+    data: {
+      totalRevenue: overview.totalRevenue,
+      pendingOrders: overview.Pending,
+      processingOrders: overview.Processing,
+      onTheWayOrders: overview.Delivering,
+      deliveredOrders: overview.Delivered,
+      cancelledOrders: overview.Cancelled
+    }
+  })
+})
 
 export const getOrderShopOverview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const products = await Product.find()
-  const orders = await Order.find()
-  const users = await User.find()
-  const totalCategories = await Category.countDocuments()
-  const orderChartData = await getRevenueByMonth()
+  const [products, orders, users, totalCategories, orderChartData] = await Promise.all([
+    Product.find(),
+    Order.find(),
+    User.find(),
+    Category.countDocuments(),
+    getRevenueByMonth()
+  ])
 
   const totalUsers = users.length
   const totalEmailUsers = users.filter((user) => user.isGoogleAccount === false).length
@@ -726,37 +652,43 @@ export const getOrderShopOverview = asyncHandler(async (req: Request, res: Respo
   const totalDeletedProducts = products.filter((product) => product.isDeleted).length
   const lowStockProducts = products.filter((product) => product.quantity <= 10)
 
-  const totalOrders = orders.length
-  const isPaidOrders = orders.filter((order) => order.isPaid).length
-  const deliveredOrders = orders.filter((order) => order.status === 'Delivered').length
-  const cancelledOrders = orders.filter((order) => order.status === 'Cancelled').length
-  const totalRevenue = orders.reduce((acc, order) => (order.isPaid ? acc + order.totalPrice : acc), 0)
-  const paymentMethodArr = [
-    { method: 'COD', count: 0 },
-    { method: 'ZALO', count: 0 },
-    { method: 'MOMO', count: 0 },
-    { method: 'SEPAY', count: 0 }
-  ]
-  orders.map((order) => {
-    paymentMethodArr.map((method) => {
-      if (order.paymentMethod === method.method) {
-        method.count++
-      }
-    })
-  })
+  const orderStats = orders.reduce(
+    (acc, order) => {
+      acc.totalRevenue += order.isPaid ? order.totalPrice : 0
+      acc.totalOrders++
+      acc.isPaidOrders += order.isPaid ? 1 : 0
+      acc[order.status] = (acc[order.status] || 0) + 1
+      acc.paymentMethod[order.paymentMethod] = (acc.paymentMethod[order.paymentMethod] || 0) + 1
+      return acc
+    },
+    {
+      totalOrders: 0,
+      isPaidOrders: 0,
+      Delivered: 0,
+      Cancelled: 0,
+      totalRevenue: 0,
+      paymentMethod: { COD: 0, ZALO: 0, MOMO: 0, SEPAY: 0 }
+    }
+  )
+
+  // Chuyển đổi object thành array cho JSON response
+  const paymentMethodArr = Object.entries(orderStats.paymentMethod).map(([method, count]) => ({
+    method,
+    count
+  }))
 
   res.status(200).json({
     message: 'Get shop overview successfully',
     data: {
       totalProducts,
       totalUsers,
-      totalOrders,
-      deliveredOrders,
-      cancelledOrders,
-      totalRevenue,
+      totalOrders: orderStats.totalOrders,
+      deliveredOrders: orderStats.Delivered,
+      cancelledOrders: orderStats.Cancelled,
+      totalRevenue: orderStats.totalRevenue,
       totalProductInStock,
       totalCategories,
-      isPaidOrders,
+      isPaidOrders: orderStats.isPaidOrders,
       lowStockProducts,
       paymentMethodArr,
       totalEmailUsers,
