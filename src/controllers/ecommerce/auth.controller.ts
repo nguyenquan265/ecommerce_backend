@@ -298,6 +298,10 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response, n
     throw new ApiError(400, 'User not found')
   }
 
+  if (user.isGoogleAccount) {
+    throw new ApiError(400, 'Please reset password with Google')
+  }
+
   const resetPasswordToken = crypto.randomBytes(20).toString('hex')
   const resetPasswordExpiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000)
 
@@ -306,7 +310,7 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response, n
 
   await Promise.all([
     user.save(),
-    sendPasswordResetEmail(user.email as string, `${process.env.CLIENT_URL}/reset-password/${resetPasswordToken}`)
+    sendPasswordResetEmail(email, `${process.env.CLIENT_URL}/reset-password/${resetPasswordToken}`)
   ])
 
   res.status(200).json({ message: 'Password reset link sent to your email' })

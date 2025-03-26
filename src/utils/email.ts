@@ -1,4 +1,4 @@
-import { mailtrapClient, sender } from '../config/ecommerce/mailtrap'
+import { transporter } from '../config/ecommerce/mail'
 import ApiError from './ApiError'
 
 const VERIFICATION_EMAIL_TEMPLATE = `
@@ -98,15 +98,12 @@ const PASSWORD_RESET_REQUEST_TEMPLATE = `
 `
 
 export const sendVerificationEmail = async (email: string, verificationToken: string) => {
-  const recipient = [{ email }]
-
   try {
-    const response = await mailtrapClient.send({
-      from: sender,
-      to: recipient,
+    const response = await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: email,
       subject: 'Verify Your Email',
-      html: VERIFICATION_EMAIL_TEMPLATE.replace('{verificationCode}', verificationToken),
-      category: 'Verification Email'
+      html: VERIFICATION_EMAIL_TEMPLATE.replace('{verificationCode}', verificationToken)
     })
 
     console.log('Email sent successfully', response)
@@ -116,17 +113,12 @@ export const sendVerificationEmail = async (email: string, verificationToken: st
 }
 
 export const sendWelcomeEmail = async (email: string, name: string) => {
-  const recipient = [{ email }]
-
   try {
-    const response = await mailtrapClient.send({
-      from: sender,
-      to: recipient,
-      template_uuid: '82dbb78e-08e2-4b1d-9ba7-26a5a701174a',
-      template_variables: {
-        company: 'Authentication Web App',
-        name
-      }
+    const response = await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: 'Welcome to PlusHouse',
+      html: `<p>Hello ${name},</p><p>Welcome to PlusHouse! We're excited to have you on board.</p>`
     })
 
     console.log('Email sent successfully', response)
@@ -136,33 +128,29 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
 }
 
 export const sendPasswordResetEmail = async (email: string, resetURL: string) => {
-  const recipient = [{ email }]
-
   try {
-    const response = await mailtrapClient.send({
-      from: sender,
-      to: recipient,
+    const response = await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: email,
       subject: 'Reset Your Password',
-      html: PASSWORD_RESET_REQUEST_TEMPLATE.replace('{resetURL}', resetURL),
-      category: 'Password Reset'
+      html: PASSWORD_RESET_REQUEST_TEMPLATE.replace('{resetURL}', resetURL)
     })
 
     console.log('Email sent successfully', response)
   } catch (error) {
+    console.log(error)
+
     throw new ApiError(500, 'Failed to send password reset request email')
   }
 }
 
 export const sendPasswordResetSuccessEmail = async (email: string) => {
-  const recipient = [{ email }]
-
   try {
-    const response = await mailtrapClient.send({
-      from: sender,
-      to: recipient,
+    const response = await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: email,
       subject: 'Password Reset Successful',
-      html: PASSWORD_RESET_SUCCESS_TEMPLATE,
-      category: 'Password Reset'
+      html: PASSWORD_RESET_SUCCESS_TEMPLATE
     })
 
     console.log('Email sent successfully', response)
