@@ -1,5 +1,6 @@
 import moment from 'moment'
 import crypto from 'crypto'
+import CryptoJS from 'crypto-js'
 
 import ZaloConfig from '../config/ecommerce/zalo'
 import MomoConfig from '../config/ecommerce/momo'
