@@ -99,6 +99,8 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
 }
 
 export const sendPasswordResetEmail = async (email: string, resetURL: string) => {
+  console.log(resetURL)
+
   try {
     const response = await transporter.sendMail({
       from: process.env.EMAIL_FROM,
