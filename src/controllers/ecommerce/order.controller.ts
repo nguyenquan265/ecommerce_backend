@@ -136,7 +136,7 @@ export const createOrder = asyncHandler(async (req: CreateOrderRequest, res: Res
           update: {
             $inc: {
               quantity: -item.amount,
-              sold: item.amount
+              quantitySold: item.amount
             }
           }
         }
@@ -270,7 +270,7 @@ export const zaloCallback = asyncHandler(async (req: Request, res: Response, nex
             update: {
               $inc: {
                 quantity: -item.amount,
-                sold: item.amount
+                quantitySold: item.amount
               }
             }
           }
@@ -366,7 +366,7 @@ export const momoCallback = asyncHandler(async (req: Request, res: Response, nex
     const bulkOperations = orderItems.map((item) => ({
       updateOne: {
         filter: { _id: item.product },
-        update: { $inc: { quantity: -item.amount, sold: item.amount } }
+        update: { $inc: { quantity: -item.amount, quantitySold: item.amount } }
       }
     }))
 
@@ -445,7 +445,7 @@ export const cancelOrder = asyncHandler(async (req: Request, res: Response, next
         update: {
           $inc: {
             quantity: item.amount, // Trả lại số lượng
-            sold: -item.amount // Giảm số lượng đã bán
+            quantitySold: -item.amount // Giảm số lượng đã bán
           }
         }
       }
@@ -630,7 +630,8 @@ export const getOrderOverview = asyncHandler(async (req: GetOrderOverviewRequest
       onTheWayOrders: overview.Delivering,
       deliveredOrders: overview.Delivered,
       cancelledOrders: overview.Cancelled
-    }
+    },
+    orders
   })
 })
 

@@ -28,7 +28,8 @@ export const getAllProducts = asyncHandler(async (req: GetProductsRequest, res: 
   let sort: any = { createdAt: -1 }
 
   if (searchString) {
-    const searchRegex = new RegExp(searchString, 'i')
+    const normalizedSearch = slugify(searchString)
+    const searchRegex = new RegExp(normalizedSearch, 'i')
 
     filter = {
       ...filter,

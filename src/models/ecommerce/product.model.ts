@@ -10,7 +10,7 @@ export interface IProduct extends Document {
   price: number
   priceDiscount: number
   quantity: number
-  sold: number
+  quantitySold: number
   mainImage: string
   subImages: {
     url: string
@@ -46,7 +46,7 @@ const productSchema = new Schema<IProduct>(
       type: Number,
       default: 10
     },
-    sold: {
+    quantitySold: {
       type: Number,
       default: 0
     },
