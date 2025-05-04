@@ -408,8 +408,6 @@ export const momoCallback = asyncHandler(async (req: Request, res: Response, nex
   res.status(200).json(req.body)
 })
 
-export const sepayCallback = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {})
-
 export const cancelOrder = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const session = await mongoose.startSession()
   session.startTransaction()
@@ -636,11 +634,10 @@ export const getOrderOverview = asyncHandler(async (req: GetOrderOverviewRequest
 })
 
 export const getOrderShopOverview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const [products, orders, users, totalCategories, orderChartData] = await Promise.all([
+  const [products, orders, users, orderChartData] = await Promise.all([
     Product.find(),
     Order.find(),
     User.find(),
-    Category.countDocuments(),
     getRevenueByMonth()
   ])
 
@@ -688,7 +685,6 @@ export const getOrderShopOverview = asyncHandler(async (req: Request, res: Respo
       cancelledOrders: orderStats.Cancelled,
       totalRevenue: orderStats.totalRevenue,
       totalProductInStock,
-      totalCategories,
       isPaidOrders: orderStats.isPaidOrders,
       lowStockProducts,
       paymentMethodArr,
