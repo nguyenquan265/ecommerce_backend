@@ -8,7 +8,6 @@ import {
   getOrderById,
   getMyOrders,
   momoCallback,
-  sepayCallback,
   zaloCallback,
   updateOrder,
   deleteOrder,
@@ -21,7 +20,6 @@ const router = Router()
 
 router.post('/zalo-callback', zaloCallback)
 router.post('/momo-callback', momoCallback)
-router.post('/sepay-callback', sepayCallback)
 router.patch('/cancel-order/:orderId', authenticate, cancelOrder)
 router.patch('/confirm-order/:orderId', authenticate, confirmOrder)
 

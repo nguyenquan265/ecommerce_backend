@@ -634,21 +634,11 @@ export const getOrderOverview = asyncHandler(async (req: GetOrderOverviewRequest
 })
 
 export const getOrderShopOverview = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const [products, orders, users, orderChartData] = await Promise.all([
-    Product.find(),
-    Order.find(),
-    User.find(),
+  const [products, orders, orderChartData] = await Promise.all([
+    Product.find({ quantity: { $lte: 10 } }).lean(),
+    Order.find({}, 'status isPaid totalPrice paymentMethod'),
     getRevenueByMonth()
   ])
-
-  const totalUsers = users.length
-  const totalEmailUsers = users.filter((user) => user.isGoogleAccount === false).length
-  const totalGoogleUsers = users.filter((user) => user.isGoogleAccount === true).length
-
-  const totalProducts = products.length
-  const totalProductInStock = products.reduce((acc, product) => acc + product.quantity, 0)
-  const totalDeletedProducts = products.filter((product) => product.isDeleted).length
-  const lowStockProducts = products.filter((product) => product.quantity <= 10)
 
   const orderStats = orders.reduce(
     (acc, order) => {
@@ -678,19 +668,13 @@ export const getOrderShopOverview = asyncHandler(async (req: Request, res: Respo
   res.status(200).json({
     message: 'Get shop overview successfully',
     data: {
-      totalProducts,
-      totalUsers,
       totalOrders: orderStats.totalOrders,
       deliveredOrders: orderStats.Delivered,
       cancelledOrders: orderStats.Cancelled,
       totalRevenue: orderStats.totalRevenue,
-      totalProductInStock,
       isPaidOrders: orderStats.isPaidOrders,
-      lowStockProducts,
+      lowStockProducts: products,
       paymentMethodArr,
-      totalEmailUsers,
-      totalGoogleUsers,
-      totalDeletedProducts,
       orderChartData
     }
   })
