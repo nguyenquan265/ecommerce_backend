@@ -56,7 +56,7 @@ const userSchema = new Schema<IUser>(
     },
     photoUrl: {
       type: String,
-      default: 'https://png.pngtree.com/png-clipart/20210129/ourmid/pngtree-default-male-avatar-png-image_2811083.jpg'
+      default: 'https://cdn-icons-png.flaticon.com/512/6596/6596121.png'
     },
     shippingAddress: {
       address: String,
