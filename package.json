@@ -7,7 +7,6 @@
     "dev": "npx nodemon",
     "build": "tsc && tsc-alias",
     "start": "node dist/index.js",
-    "production": "npm run build && npm run start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --check .",

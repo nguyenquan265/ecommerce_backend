@@ -19,5 +19,9 @@
   ], // Các file dùng để defined global type cho dự án
   "include": [
     "src/**/*"
-  ] // Đường dẫn include cho các file cần build
+  ], // Đường dẫn include cho các file cần build
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
