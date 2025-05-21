@@ -197,7 +197,6 @@ export const createOrder = asyncHandler(async (req: CreateOrderRequest, res: Res
         message: 'Create momo payment request successfully',
         detail: responseData
       })
-    } else if (paymentMethod === 'SEPAY') {
     }
   } catch (error) {
     await session.abortTransaction()
@@ -655,7 +654,7 @@ export const getOrderShopOverview = asyncHandler(async (req: Request, res: Respo
       Delivered: 0,
       Cancelled: 0,
       totalRevenue: 0,
-      paymentMethod: { COD: 0, ZALO: 0, MOMO: 0, SEPAY: 0 }
+      paymentMethod: { COD: 0, ZALO: 0, MOMO: 0 }
     }
   )
 
