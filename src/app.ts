@@ -28,6 +28,9 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 
+app.get('/', (req: Request, res: Response) => {
+  res.status(200).send({ message: 'Welcome to the E-commerce API' })
+})
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).send({ message: 'Server is running' })
 })
