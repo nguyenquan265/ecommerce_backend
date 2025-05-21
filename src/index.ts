@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import cron from 'node-cron'
-import http from 'http'
+import https from 'https'
 
 import app from './app'
 import connectEcommerceDB from './config/ecommerce/db'
@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000
 const URL = process.env.SERVER_URL_HEALTH as string
 
 const ping = () => {
-  http
+  https
     .get(URL, (res) => {
       if (res.statusCode === 200) {
         console.log('GET request sent successfully')
