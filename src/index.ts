@@ -28,4 +28,4 @@ app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`)
 })
 
-cron.schedule('*/14 * * * *', ping)
+cron.schedule('*/10 * * * *', ping)
